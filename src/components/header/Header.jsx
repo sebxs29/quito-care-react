@@ -1,40 +1,37 @@
 import './Header.css'
 import { Link } from 'react-router'
-import TypeIt from 'typeit-react'
 
 const Header = () => {
   return (
+    
     <header className="header">
-      <nav className="nav__header container">
+        <nav className="nav__header container">
 
-        <div className="nav__top">
-          <h1 className="navbar_logo">
-            <TypeIt
-              options={{
-                speed: 100,
-                waitUntilVisible: true,
-                cursor: false,
-              }}
-            >
-              Quito<span className="navbar__logo--primary">Care</span>
-            </TypeIt>
-          </h1>
-        </div>
+            <div className="nav__top">
+            <h1 className="navbar_logo">
+                Quito<span className="navbar__logo--primary">Care</span>
+            </h1>
+            </div>
 
-        <ul className="nav__menu" id="navMenu">
-          <li><Link to="/">Inicio</Link></li>
-          <li><Link to="/servicios">Servicios</Link></li>
-          <li><a href="/#equipo">Nosotros</a></li>
-          <li><a href="/#contact">Contacto</a></li>
-          <li>
-            <Link to="/login" className="nav__login-btn">
-              LOGIN
-            </Link>
-          </li>
-        </ul>
+            <ul className="nav__menu" id="navMenu">
+              <li><Link to="/">Inicio</Link></li>
 
-      </nav>
+              <li><Link to="/servicios">Servicios</Link></li>
+
+              <li><a href="/#equipo">Nosotros</a></li>
+
+              <li><a href="/#contact">Contacto</a></li>
+
+              <li>
+                <Link to="/login" className="nav__login-btn">
+                  LOGIN
+                </Link>
+              </li>
+            </ul>
+
+        </nav>
     </header>
+
   )
 }
 
