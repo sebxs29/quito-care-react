@@ -10,12 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "aos": "^3.0.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-router": "^7.18.0",
-    "swiper": "^11.0.0",
-    "typeit-react": "^3.1.0"
+    "react-router": "^7.18.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
