@@ -13,7 +13,6 @@
     align-items: center;
 }
 
-
 .navbar_logo {
     font-size: 2.2rem;
     font-weight: bold;
@@ -61,8 +60,23 @@
     box-shadow: 0 8px 15px rgba(0,0,0,0.2);
 }
 
-@media (min-width: 768px) {
+.nav__menu .nav__register-btn {
+    background-color: var(--colorBoton);
+    color: var(--colorBlanco);
+    padding: 0.6rem 1.4rem;
+    border: none;
+    border-radius: 14px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
 
+.nav__register-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+
+@media (min-width: 768px) {
     .nav__menu {
         flex-direction: row;
         justify-content: center;
@@ -74,7 +88,6 @@
 }
 
 @media (min-width: 1024px) {
-
     .nav__header {
         flex-direction: row;
         align-items: center;
@@ -89,7 +102,6 @@
         gap: 2rem;
         margin-top: 1rem;
     }
-
     .nav__menu a {
         font-size: 1.5rem;
     }
