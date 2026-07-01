@@ -24,8 +24,8 @@ const Header = () => {
         <ul className="nav__menu" id="navMenu">
           <li><Link to="/">Inicio</Link></li>
           <li><Link to="/servicios">Servicios</Link></li>
-          <li><a href="/#equipo">Nosotros</a></li>
-          <li><a href="/#contact">Contacto</a></li>
+          <li><Link to="/nosotros">Nosotros</Link></li>
+          <li><Link to="/contacto">Contacto</Link></li>
           <li>
             <Link to="/login" className="nav__login-btn">
               LOGIN
