@@ -1,24 +1,52 @@
 import './Login.css'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useState } from 'react'
 import TypeIt from 'typeit-react'
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { authFirebase } from "../firebasje";
 
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
     
     if (!email || !password) {
       setError('Por favor completa todos los campos')
+      setLoading(false)
       return
     }
     
-    console.log('Email:', email)
-    console.log('Password:', password)
+    try {
+      await signInWithEmailAndPassword(authFirebase, email, password)
+      navigate('/dashboard')
+    } catch (error) {
+      console.log(error)
+      switch (error.code) {
+        case 'auth/user-not-found':
+          setError('Usuario no encontrado')
+          break
+        case 'auth/wrong-password':
+          setError('Contraseña incorrecta')
+          break
+        case 'auth/invalid-email':
+          setError('Correo electrónico inválido')
+          break
+        case 'auth/too-many-requests':
+          setError('Demasiados intentos. Intenta más tarde')
+          break
+        default:
+          setError(error.message)
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -87,8 +115,8 @@ const Login = () => {
             </Link>
           </div>
           
-          <button type="submit" className="login-button">
-            Iniciar Sesión
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? 'Cargando...' : 'Iniciar Sesión'}
           </button>
         </form>
         
