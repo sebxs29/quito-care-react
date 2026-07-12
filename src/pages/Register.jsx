@@ -4,7 +4,10 @@ import { NavLink, useNavigate } from 'react-router'
 
 import { useForm } from 'react-hook-form'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { authFirebase } from '../firebasje'
+import { authFirebase } from '../firebase'
+
+import { dbFirebase } from '../firebase'
+import { doc, setDoc } from 'firebase/firestore'
 
 const Register = () => {
 
@@ -23,6 +26,14 @@ const handleRegister = async (data) => {
 
     const userRegister = newUserFirebase.user;
     console.log(userRegister);
+
+    if (userRegister) {
+      await setDoc(doc(dbFirebase, "Users", userRegister.uid), {
+        email: userRegister.email,
+        name: data.name,
+        rol: "admin"
+      })
+    }
 
     navigate("/login");
   } catch (error) {

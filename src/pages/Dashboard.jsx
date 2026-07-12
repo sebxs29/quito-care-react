@@ -1,139 +1,270 @@
 import './Dashboard.css'
-import { useState } from 'react'
-import TypeIt from 'typeit-react'
+import { authFirebase, dbFirebase } from '../firebase'
+
+import { useForm } from 'react-hook-form';
+
+import { useState } from 'react';
+import { signOut } from 'firebase/auth';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+
+import TypeIt from 'typeit-react';
+
+const doctores = [
+  {
+    id: "doctor-1",
+    nombre: "Dr. Sebastián Toapanta",
+    especialidad: "Medicina general"
+  }, 
+  {
+    id: "doctor-2",
+    nombre: "Dr. Andrés Oto",
+    especialidad: "Medicina general"
+  },
+  {
+    id: "doctor-3",
+    nombre: "Dr. Sebastián Caiza",
+    especialidad: "Psicología"
+  },
+  {
+    id: "doctor-4",
+    nombre: "Dra. Emilia Caza",
+    especialidad: "Pediatría"
+  },
+  {
+    id: "doctor-5",
+    nombre: "Dr. Joel Freeire",
+    especialidad: "Nutrición"
+  },
+  {
+    id: "doctor-6",
+    nombre : "Dra. Melanie Vera",
+    especialidad: "Dermatología"
+  },
+  {
+    id: "doctor-7",
+    nombre: "Dra. Annabel Gómez",
+    especialidad: "Gastroenterología"
+  } 
+
+]
+
+const especialidades = [
+  ...new Set(doctores.map((doctor) => doctor.especialidad))
+];
+
 
 const Dashboard = () => {
-  const [appointments, setAppointments] = useState([
-    { id: 1, date: '2026-06-16', time: '09:00', title: 'Consulta médica', doctor: 'Dr. Pérez', status: 'confirmada' },
-    { id: 2, date: '2026-06-17', time: '14:30', title: 'Análisis de sangre', doctor: 'Dra. Gómez', status: 'pendiente' },
-    { id: 3, date: '2026-06-18', time: '11:00', title: 'Revisión dental', doctor: 'Dr. Rodríguez', status: 'completada' },
-  ])
-  const [showModal, setShowModal] = useState(false)
-  const [newAppointment, setNewAppointment] = useState({ date: '', time: '', title: '', doctor: '' })
 
-  const addAppointment = (e) => {
-    e.preventDefault()
-    if (!newAppointment.date || !newAppointment.time || !newAppointment.title || !newAppointment.doctor) {
-      alert('Completa todos los campos')
-      return
-    }
-    const newApp = {
-      id: appointments.length + 1,
-      ...newAppointment,
-      status: 'pendiente'
-    }
-    setAppointments([newApp, ...appointments])
-    setNewAppointment({ date: '', time: '', title: '', doctor: '' })
-    setShowModal(false)
+const { register, handleSubmit, reset, watch, setValue, formState: {errors}} = useForm();
+  
+const especialidadSeleccionada = watch("especialidad");
+
+const doctoresFiltrados = doctores.filter(
+  (doctor) =>
+    doctor.especialidad === especialidadSeleccionada
+);
+
+const fechaActual = new Date().toISOString().split("T")[0];
+
+const [mensaje, setMensaje] = useState("");
+
+const handleLogout = async () => {
+
+  try {
+    await signOut(authFirebase);
+    window.location.href = "/";
+  } catch (error) {
+    console.log(error);
   }
 
-  const deleteAppointment = (id) => {
-    if (window.confirm('¿Eliminar esta cita?')) {
-      setAppointments(appointments.filter(app => app.id !== id))
-    }
+}
+
+const handleCreate = async (data) => {
+  
+try {
+
+  setMensaje("");
+
+  const usuarioActual = authFirebase.currentUser;
+
+  if(!usuarioActual) {
+    setMensaje("No existe un usuario autenticado");
+    return;
   }
 
-  const updateStatus = (id, newStatus) => {
-    setAppointments(appointments.map(app => 
-      app.id === id ? { ...app, status: newStatus } : app
-    ))
+  const doctorSeleccionado = doctores.find(
+    (doctor) => doctor.id == data.doctorId
+  );
+
+  if(!doctorSeleccionado) {
+    setMensaje("Debe seleccionar un doctor");
+    return;
   }
 
-  const total = appointments.length
-  const confirmadas = appointments.filter(a => a.status === 'confirmada').length
-  const pendientes = appointments.filter(a => a.status === 'pendiente').length
+  const nuevaCita = {
+    pacienteId: usuarioActual.uid,
+    pacienteEmail: usuarioActual.email,
+
+    especialidad: data.especialidad,
+
+    doctorId: doctorSeleccionado.id,
+    doctorNombre: doctorSeleccionado.nombre,
+
+    fecha: data.fecha,
+    hora: data.hora,
+    modalidad: data.modalidad,
+    motivo: data.motivo,
+
+    estado: "Pendiente",
+    fechaCreacion: serverTimestamp()
+  };
+
+  await addDoc(collection(dbFirebase, "citas"), nuevaCita);
+
+  reset();
+  setMensaje("La cita fue registrada correctamente");
+
+} catch (error) {
+  console.log(error);
+  setMensaje("No se pudo registrar la cita");
+}
+
+}
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1 className="dashboard-title">
-          <TypeIt options={{ speed: 100, waitUntilVisible: true, cursor: false }}>
-            Mi <span className="highlight">Dashboard</span>
-          </TypeIt>
-        </h1>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          + Nueva Cita
-        </button>
-      </div>
+    <>
+      <section className="header_projects">
+        <p>Bienvenido - {authFirebase.currentUser?.email}</p>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-number">{total}</div>
-          <div className="stat-label">Total Citas</div>
-        </div>
-        <div className="stat-card green">
-          <div className="stat-number">{confirmadas}</div>
-          <div className="stat-label">Confirmadas</div>
-        </div>
-        <div className="stat-card orange">
-          <div className="stat-number">{pendientes}</div>
-          <div className="stat-label">Pendientes</div>
-        </div>
-      </div>
+        <div className="header_actions">
+          <button className="theme-toogle">🌙</button>
 
-      <div className="appointments-section">
-        <h3 className="section-title">Mis Citas</h3>
-        <div className="appointments-list">
-          {appointments.length === 0 ? (
-            <div className="empty">No hay citas</div>
-          ) : (
-            appointments.map(app => (
-              <div key={app.id} className={`appointment-item ${app.status}`}>
-                <div className="appointment-info">
-                  <div className="appointment-date">{app.date} - {app.time}</div>
-                  <div className="appointment-title">{app.title}</div>
-                  <div className="appointment-doctor">{app.doctor}</div>
-                </div>
-                <div className="appointment-actions">
-                  <span className={`status-badge ${app.status}`}>{app.status}</span>
-                  <select 
-                    value={app.status}
-                    onChange={(e) => updateStatus(app.id, e.target.value)}
-                    className="status-select"
-                  >
-                    <option value="pendiente">Pendiente</option>
-                    <option value="confirmada">Confirmada</option>
-                    <option value="completada">Completada</option>
-                    <option value="cancelada">Cancelada</option>
-                  </select>
-                  <button onClick={() => deleteAppointment(app.id)} className="delete-btn">✕</button>
-                </div>
-              </div>
-            ))
-          )}
+          <button className="logout-btn" onClick={handleLogout}>Salir</button>
         </div>
-      </div>
+      </section>
+    
+      <section className="container_projects">
 
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Nueva Cita</h2>
-              <button onClick={() => setShowModal(false)} className="modal-close">✕</button>
-            </div>
-            <form onSubmit={addAppointment}>
-              <div className="form-group">
-                <label>Fecha</label>
-                <input type="date" value={newAppointment.date} onChange={(e) => setNewAppointment({...newAppointment, date: e.target.value})} required />
-              </div>
-              <div className="form-group">
-                <label>Hora</label>
-                <input type="time" value={newAppointment.time} onChange={(e) => setNewAppointment({...newAppointment, time: e.target.value})} required />
-              </div>
-              <div className="form-group">
-                <label>Título</label>
-                <input type="text" placeholder="Ej: Consulta médica" value={newAppointment.title} onChange={(e) => setNewAppointment({...newAppointment, title: e.target.value})} required />
-              </div>
-              <div className="form-group">
-                <label>Doctor</label>
-                <input type="text" placeholder="Nombre del doctor" value={newAppointment.doctor} onChange={(e) => setNewAppointment({...newAppointment, doctor: e.target.value})} required />
-              </div>
-              <button type="submit" className="btn-primary full">Agendar Cita</button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+        <section className="form-section">
+
+          <h1 className='dashboard-title'>
+            <TypeIt
+              options={{
+                speed: 100,
+                waitUntilVisible: true,
+                cursor: false
+              }}
+            >
+              Agendar <span className='highlight'>Cita Médica</span>
+            </TypeIt>
+
+          </h1>
+
+          <p>Complete la información para registrar una nueva cita</p>
+
+
+          <form className="route-form" onSubmit={handleSubmit(handleCreate)}>
+
+            <label>Especialidad:</label>
+            <select
+              {...register("especialidad", {
+                required: "La especialidad es requerida",
+                onChange: () => {
+                  setValue("doctorId", "")
+                }
+              })}
+            >
+              <option value="">Seleccione una especialidad</option>
+
+              {especialidades.map((especialidad) => (
+                <option
+                  key={especialidad}
+                  value={especialidad}
+                >
+                  {especialidad}
+                </option>
+              ))}
+            </select>
+
+            {errors.especialidad && (<span className='errors'>{errors.especialidad.message}</span>)}
+
+            <label>Doctor:</label>
+            <select
+              disabled={!especialidadSeleccionada}
+              {...register("doctorId", {
+                required: "El doctor es requerido"
+              })}
+            >
+              <option value="">Seleccione un doctor</option>
+
+              {doctoresFiltrados.map((doctor) => (
+                <option
+                  key={doctor.id}
+                  value={doctor.id}
+                >
+                  {doctor.nombre}
+                </option>
+              ))}              
+
+            </select>
+
+            {errors.doctorId && (<span className='errors'>{errors.doctorId.message}</span>)}
+
+            <label>Fecha:</label>
+            <input type='date'
+              min={fechaActual}
+              {...register("fecha", {required: "La fecha es requerida"})}
+            />
+
+            {errors.fecha && (<span className='errors'>{errors.fecha.message}</span>)}
+
+            <label>Hora:</label>
+            <input type='time'
+              {...register("hora", {required: "La hora es requerida"})}
+            />
+
+            {errors.hora && (<span className='errors'>{errors.hora.message}</span>)}
+
+
+
+            <label>Modalidad:</label>
+
+            <select
+              {...register("modalidad", {required: "La modalidad es requerida"})}
+            >
+
+              <option value="Videollamada">Videollamada</option>
+
+              <option value="Chat">Chat</option>
+
+              <option value="Presencial">Presencial</option>
+
+            </select>
+
+            {errors.modalidad && (<span className='errors'>{errors.modalidad.message}</span>)}
+
+            <label>Motivo de la consulta:</label>
+            <textarea
+              placeholder='Describa brevemente el motivo de la consulta'
+              {...register("motivo", {
+                required: "El motivo es requerido",
+                minLength: {value: 10, message: "El motivo debe tener mínimo 10 caracteres"}
+              })}
+            />
+
+            {errors.motivo && (<span className='errors'>{errors.motivo.message}</span>)}
+
+            {mensaje && (<p className='mensaje-formulario'>{mensaje}</p>)}
+
+            <input className='btn'
+              type="submit"
+              value="Agendar cita"
+            />
+          </form>
+        </section>
+      </section>
+
+    </>
   )
 }
 

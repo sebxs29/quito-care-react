@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { useState } from 'react'
 import TypeIt from 'typeit-react'
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { authFirebase } from "../firebasje";
+import { authFirebase } from "../firebase";
 
 const Login = () => {
   const [email, setEmail] = useState('')
