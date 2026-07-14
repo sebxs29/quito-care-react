@@ -3,9 +3,9 @@ import { authFirebase, dbFirebase } from '../firebase'
 
 import { useForm } from 'react-hook-form';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 
 import TypeIt from 'typeit-react';
 
@@ -68,6 +68,10 @@ const fechaActual = new Date().toISOString().split("T")[0];
 
 const [mensaje, setMensaje] = useState("");
 
+// listar inicio
+const [citas, setCitas] = useState([]);
+// listar fin
+
 const handleLogout = async () => {
 
   try {
@@ -78,6 +82,34 @@ const handleLogout = async () => {
   }
 
 }
+
+// listar inicio
+const handleGet = async () => {
+
+  try {
+
+    const usuarioActual = authFirebase.currentUser;
+
+    if(!usuarioActual) {
+      return;
+    }
+
+    const citasQuery = query(
+      collection(dbFirebase, "citas"),
+      where("pacienteId", "==", usuarioActual.uid)
+    );
+
+    const snapshot = await getDocs(citasQuery);
+    const documentos = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+
+    setCitas(documentos);
+
+  } catch (error) {
+    console.log(error);
+  }
+
+}
+// listar fin
 
 const handleCreate = async (data) => {
   
@@ -123,6 +155,9 @@ try {
 
   reset();
   setMensaje("La cita fue registrada correctamente");
+  // listar inicio
+  handleGet();
+  // listar fin
 
 } catch (error) {
   console.log(error);
@@ -130,6 +165,12 @@ try {
 }
 
 }
+
+// listar inicio
+useEffect(() => {
+  handleGet();
+}, [])
+// listar fin
 
   return (
     <>
@@ -262,6 +303,34 @@ try {
             />
           </form>
         </section>
+
+        {/* listar inicio */}
+        <section className="routes-section">
+
+          <h4>Mis citas</h4>
+          <p>Listado de citas agendadas</p>
+
+          {citas.length === 0 && (<div className="no-routes">No existen registros...</div>)}
+
+          {
+            citas.map((cita) => (
+              <div className="route-card" key={cita.id}>
+                <div className="route-info">
+                  <p>Especialidad: {cita.especialidad}</p>
+                  <p>Doctor: {cita.doctorNombre}</p>
+                  <p>Fecha: {cita.fecha}</p>
+                  <p>Hora: {cita.hora}</p>
+                  <p>Modalidad: {cita.modalidad}</p>
+                  <p>Motivo: {cita.motivo}</p>
+                  <p>Estado: {cita.estado}</p>
+                </div>
+              </div>
+            ))
+          }
+
+        </section>
+        {/* listar fin */}
+
       </section>
 
     </>

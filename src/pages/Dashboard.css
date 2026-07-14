@@ -108,8 +108,10 @@
     padding: 3rem 1.5rem;
     background-color: var(--colorFondoSeccion);
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: flex-start;
+    gap: 2.5rem;
 }
 
 
@@ -256,6 +258,137 @@
 }
 
 
+/* listar inicio */
+
+/* =========================================
+   SECCIÓN DE LISTADO (CITAS)
+========================================= */
+
+.routes-section {
+    width: 100%;
+    max-width: 70rem;
+    padding: 2.5rem 2rem;
+    background-color: var(--colorBlanco);
+    border-radius: 1.4rem;
+    box-shadow:
+        0 4px 8px rgba(0, 0, 0, 0.05),
+        0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.routes-section h4 {
+    margin-bottom: 0.8rem;
+    font-size: 2.2rem;
+    color: var(--colorPrimario);
+}
+
+.routes-section > p {
+    margin-bottom: 2rem;
+    font-size: 1.4rem;
+    color: #666666;
+}
+
+.no-routes {
+    padding: 1.5rem;
+    border-radius: 0.9rem;
+    background-color: var(--colorFondoSeccion);
+    color: #999999;
+    font-size: 1.4rem;
+    text-align: center;
+}
+
+
+/* =========================================
+   TARJETA DE CITA
+========================================= */
+
+.route-card {
+    padding: 1.6rem;
+    margin-bottom: 1.2rem;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid var(--colorPrimario);
+    border-radius: 1.1rem;
+    background-color: var(--colorFondoSeccion);
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.route-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 14px rgba(0, 0, 0, 0.08);
+}
+
+.route-card:last-child {
+    margin-bottom: 0;
+}
+
+.route-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.route-especialidad {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--colorNegro);
+}
+
+.route-estado {
+    padding: 0.4rem 1.2rem;
+    border-radius: 2rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.estado-pendiente {
+    background-color: rgba(243, 156, 18, 0.15);
+    color: #b9770e;
+}
+
+.estado-confirmada {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #1e8449;
+}
+
+.estado-cancelada {
+    background-color: rgba(214, 48, 49, 0.12);
+    color: #d63031;
+}
+
+.route-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.route-info p {
+    font-size: 1.4rem;
+    color: #444444;
+}
+
+.route-info p strong {
+    color: var(--colorNegro);
+    font-weight: 600;
+}
+
+.route-motivo {
+    padding-top: 0.6rem;
+    margin-top: 0.4rem;
+    border-top: 1px dashed #e5e7eb;
+}
+
+/* listar fin */
+
+
 /* =========================================
    TABLET
 ========================================= */
@@ -312,6 +445,34 @@
         min-width: 20rem;
         align-self: flex-end;
     }
+
+    /* listar inicio */
+    .routes-section {
+        padding: 3.5rem;
+    }
+
+    .routes-section h4 {
+        font-size: 2.5rem;
+    }
+
+    .routes-section > p {
+        font-size: 1.5rem;
+    }
+
+    .route-info {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem 2rem;
+    }
+
+    .route-motivo {
+        grid-column: 1 / -1;
+    }
+
+    .route-info p {
+        font-size: 1.5rem;
+    }
+    /* listar fin */
 }
 
 
@@ -342,4 +503,15 @@
     .form-section h4 {
         font-size: 2.7rem;
     }
+
+    /* listar inicio */
+    .routes-section {
+        max-width: 80rem;
+        padding: 4rem;
+    }
+
+    .routes-section h4 {
+        font-size: 2.7rem;
+    }
+    /* listar fin */
 }
