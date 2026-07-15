@@ -386,6 +386,43 @@
     border-top: 1px dashed #e5e7eb;
 }
 
+/* BOTÓN ELIMINAR */
+.route-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.delete-btn {
+    padding: 0.7rem 1.8rem;
+    border: none;
+    border-radius: 0.8rem;
+    background-color: #e74c3c;
+    color: var(--colorBlanco);
+    font-family: var(--fuentePrincipal);
+    font-size: 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+}
+
+.delete-btn:active {
+    transform: translateY(0);
+}
+
 /* listar fin */
 
 
@@ -472,6 +509,16 @@
     .route-info p {
         font-size: 1.5rem;
     }
+
+    .route-actions {
+        justify-content: flex-end;
+    }
+
+    .delete-btn {
+        padding: 0.8rem 2rem;
+        font-size: 1.4rem;
+    }
+   
     /* listar fin */
 }
 
@@ -512,6 +559,11 @@
 
     .routes-section h4 {
         font-size: 2.7rem;
+    }
+
+    .delete-btn {
+        padding: 0.9rem 2.5rem;
+        font-size: 1.5rem;
     }
     /* listar fin */
 }
