@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 
 import { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
 
 import TypeIt from 'typeit-react';
 
@@ -166,6 +166,23 @@ try {
 
 }
 
+// 🗑️ FUNCIÓN ELIMINAR AGREGADA
+const handleDelete = async (id) => {
+  const confirmar = confirm("¿Estás seguro de eliminar esta cita?");
+  if (confirmar) {
+    try {
+      const citaDoc = doc(dbFirebase, "citas", id);
+      await deleteDoc(citaDoc);
+      handleGet();
+      setMensaje("Cita eliminada correctamente");
+    } catch (error) {
+      console.log(error);
+      setMensaje("No se pudo eliminar la cita");
+    }
+  }
+}
+// 🗑️ FIN FUNCIÓN ELIMINAR
+
 // listar inicio
 useEffect(() => {
   handleGet();
@@ -323,6 +340,15 @@ useEffect(() => {
                   <p>Modalidad: {cita.modalidad}</p>
                   <p>Motivo: {cita.motivo}</p>
                   <p>Estado: {cita.estado}</p>
+                </div>
+                {/*BOTÓN ELIMINAR*/}
+                <div className="route-actions">
+                  <button 
+                    className="delete-btn"
+                    onClick={() => handleDelete(cita.id)}
+                  >
+                    Eliminar
+                  </button>
                 </div>
               </div>
             ))
