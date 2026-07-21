@@ -1,383 +1,610 @@
-import './Dashboard.css'
-import { authFirebase, dbFirebase } from '../firebase'
+/* =========================================
+   DASHBOARD - QUITOCARE
+========================================= */
 
-import { useForm } from 'react-hook-form';
-
-import { useState, useEffect } from 'react';
-import { signOut } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
-
-import TypeIt from 'typeit-react';
-
-const doctores = [
-  {
-    id: "doctor-1",
-    nombre: "Dr. Sebastián Toapanta",
-    especialidad: "Medicina general"
-  }, 
-  {
-    id: "doctor-2",
-    nombre: "Dr. Andrés Oto",
-    especialidad: "Medicina general"
-  },
-  {
-    id: "doctor-3",
-    nombre: "Dr. Sebastián Caiza",
-    especialidad: "Psicología"
-  },
-  {
-    id: "doctor-4",
-    nombre: "Dra. Emilia Caza",
-    especialidad: "Pediatría"
-  },
-  {
-    id: "doctor-5",
-    nombre: "Dr. Joel Freeire",
-    especialidad: "Nutrición"
-  },
-  {
-    id: "doctor-6",
-    nombre : "Dra. Melanie Vera",
-    especialidad: "Dermatología"
-  },
-  {
-    id: "doctor-7",
-    nombre: "Dra. Annabel Gómez",
-    especialidad: "Gastroenterología"
-  } 
-
-]
-
-const especialidades = [
-  ...new Set(doctores.map((doctor) => doctor.especialidad))
-];
-
-
-const Dashboard = () => {
-
-const { register, handleSubmit, reset, watch, setValue, formState: {errors}} = useForm();
-  
-const especialidadSeleccionada = watch("especialidad");
-
-const doctoresFiltrados = doctores.filter(
-  (doctor) =>
-    doctor.especialidad === especialidadSeleccionada
-);
-
-const fechaActual = new Date().toISOString().split("T")[0];
-
-const [mensaje, setMensaje] = useState("");
-
-// listar inicio
-const [citas, setCitas] = useState([]);
-// listar fin
-
-const handleLogout = async () => {
-
-  try {
-    await signOut(authFirebase);
-    window.location.href = "/";
-  } catch (error) {
-    console.log(error);
-  }
-
+.header_projects {
+    width: 100%;
+    min-height: 8rem;
+    padding: 1.8rem 5%;
+    background-color: var(--colorBlanco);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
-// listar inicio
-const handleGet = async () => {
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+}
 
-  try {
+.user-avatar {
+    width: 4.8rem;
+    height: 4.8rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--colorPrimario);
+}
 
-    const usuarioActual = authFirebase.currentUser;
+.user-avatar-placeholder {
+    width: 4.8rem;
+    height: 4.8rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--colorPrimario), #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
 
-    if(!usuarioActual) {
-      return;
+.user-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--colorNegro);
+    margin: 0;
+}
+
+.user-email {
+    font-size: 1.2rem;
+    color: #666666;
+    margin: 0;
+}
+
+.header_projects > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.dashboard-title {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--colorNegro);
+    line-height: 1.3;
+}
+
+.highlight {
+    color: var(--colorPrimario);
+}
+
+.header_projects p {
+    font-size: 1.3rem;
+    color: #666666;
+    word-break: break-word;
+}
+
+
+/* =========================================
+   ACCIONES DEL ENCABEZADO
+========================================= */
+
+.header_actions {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.theme-toogle,
+.logout-btn {
+    min-height: 4rem;
+    padding: 0.8rem 1.6rem;
+    border: none;
+    border-radius: 1rem;
+    font-family: var(--fuentePrincipal);
+    font-size: 1.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        background-color 0.3s ease;
+}
+
+.theme-toogle {
+    width: 4.2rem;
+    padding: 0;
+    background-color: var(--colorFondoSeccion);
+    color: var(--colorNegro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logout-btn {
+    background-color: var(--colorBoton);
+    color: var(--colorBlanco);
+}
+
+.theme-toogle:hover,
+.logout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 14px rgba(0, 0, 0, 0.14);
+}
+
+.logout-btn:hover {
+    background-color: #219653;
+}
+
+.theme-toogle:active,
+.logout-btn:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   CONTENEDOR PRINCIPAL
+========================================= */
+
+.container_projects {
+    min-height: calc(100vh - 8rem);
+    padding: 3rem 1.5rem;
+    background-color: var(--colorFondoSeccion);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 2.5rem;
+}
+
+
+/* =========================================
+   SECCIÓN DEL FORMULARIO
+========================================= */
+
+.form-section {
+    width: 100%;
+    max-width: 70rem;
+    padding: 2.5rem 2rem;
+    background-color: var(--colorBlanco);
+    border-radius: 1.4rem;
+    box-shadow:
+        0 4px 8px rgba(0, 0, 0, 0.05),
+        0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.form-section h4 {
+    margin-bottom: 0.8rem;
+    font-size: 2.2rem;
+    color: var(--colorPrimario);
+}
+
+.form-section > p {
+    margin-bottom: 2.5rem;
+    font-size: 1.4rem;
+    color: #666666;
+}
+
+
+/* =========================================
+   FORMULARIO
+========================================= */
+
+.route-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.route-form label {
+    margin-top: 1rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333333;
+}
+
+.route-form input,
+.route-form select,
+.route-form textarea {
+    width: 100%;
+    padding: 1.2rem 1.4rem;
+    border: 1px solid #d7dce2;
+    border-radius: 0.9rem;
+    background-color: var(--colorBlanco);
+    color: var(--colorNegro);
+    font-family: var(--fuentePrincipal);
+    font-size: 1.4rem;
+    outline: none;
+    transition:
+        border-color 0.3s ease,
+        box-shadow 0.3s ease,
+        background-color 0.3s ease;
+}
+
+.route-form input::placeholder,
+.route-form textarea::placeholder {
+    color: #999999;
+}
+
+.route-form input:focus,
+.route-form select:focus,
+.route-form textarea:focus {
+    border-color: var(--colorSecundario);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.route-form select:disabled {
+    background-color: #eeeeee;
+    color: #999999;
+    cursor: not-allowed;
+}
+
+.route-form textarea {
+    min-height: 12rem;
+    resize: vertical;
+}
+
+
+/* =========================================
+   ERRORES Y MENSAJES
+========================================= */
+
+.errors {
+    margin-top: 0.2rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #d63031;
+}
+
+.mensaje-formulario {
+    margin-top: 1.5rem;
+    padding: 1.2rem 1.4rem;
+    border-left: 4px solid var(--colorPrimario);
+    border-radius: 0.6rem;
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #1e8449;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+
+/* =========================================
+   BOTÓN AGENDAR CITA
+========================================= */
+
+.route-form .btn {
+    width: 100%;
+    margin-top: 2rem;
+    padding: 1.2rem 2.5rem;
+    border: none;
+    border-radius: 1.2rem;
+    background-color: var(--colorBoton);
+    color: var(--colorBlanco);
+    font-family: var(--fuentePrincipal);
+    font-size: 1.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        background-color 0.3s ease;
+}
+
+.route-form .btn:hover {
+    background-color: #219653;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(39, 174, 96, 0.25);
+}
+
+.route-form .btn:active {
+    transform: translateY(0);
+}
+
+
+/* listar inicio */
+
+/* =========================================
+   SECCIÓN DE LISTADO (CITAS)
+========================================= */
+
+.routes-section {
+    width: 100%;
+    max-width: 70rem;
+    padding: 2.5rem 2rem;
+    background-color: var(--colorBlanco);
+    border-radius: 1.4rem;
+    box-shadow:
+        0 4px 8px rgba(0, 0, 0, 0.05),
+        0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.routes-section h4 {
+    margin-bottom: 0.8rem;
+    font-size: 2.2rem;
+    color: var(--colorPrimario);
+}
+
+.routes-section > p {
+    margin-bottom: 2rem;
+    font-size: 1.4rem;
+    color: #666666;
+}
+
+.no-routes {
+    padding: 1.5rem;
+    border-radius: 0.9rem;
+    background-color: var(--colorFondoSeccion);
+    color: #999999;
+    font-size: 1.4rem;
+    text-align: center;
+}
+
+
+/* =========================================
+   TARJETA DE CITA
+========================================= */
+
+.route-card {
+    padding: 1.6rem;
+    margin-bottom: 1.2rem;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid var(--colorPrimario);
+    border-radius: 1.1rem;
+    background-color: var(--colorFondoSeccion);
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.route-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 14px rgba(0, 0, 0, 0.08);
+}
+
+.route-card:last-child {
+    margin-bottom: 0;
+}
+
+.route-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.route-especialidad {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--colorNegro);
+}
+
+.route-estado {
+    padding: 0.4rem 1.2rem;
+    border-radius: 2rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.estado-pendiente {
+    background-color: rgba(243, 156, 18, 0.15);
+    color: #b9770e;
+}
+
+.estado-confirmada {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #1e8449;
+}
+
+.estado-cancelada {
+    background-color: rgba(214, 48, 49, 0.12);
+    color: #d63031;
+}
+
+.route-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.route-info p {
+    font-size: 1.4rem;
+    color: #444444;
+}
+
+.route-info p strong {
+    color: var(--colorNegro);
+    font-weight: 600;
+}
+
+.route-motivo {
+    padding-top: 0.6rem;
+    margin-top: 0.4rem;
+    border-top: 1px dashed #e5e7eb;
+}
+
+/* BOTÓN ELIMINAR */
+.route-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.delete-btn {
+    padding: 0.7rem 1.8rem;
+    border: none;
+    border-radius: 0.8rem;
+    background-color: #e74c3c;
+    color: var(--colorBlanco);
+    font-family: var(--fuentePrincipal);
+    font-size: 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+}
+
+.delete-btn:active {
+    transform: translateY(0);
+}
+
+/* listar fin */
+
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (min-width: 768px) {
+
+    .header_projects {
+        padding: 2rem 6%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
     }
 
-    const citasQuery = query(
-      collection(dbFirebase, "citas"),
-      where("pacienteId", "==", usuarioActual.uid)
-    );
-
-    const snapshot = await getDocs(citasQuery);
-    const documentos = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-
-    setCitas(documentos);
-
-  } catch (error) {
-    console.log(error);
-  }
-
-}
-// listar fin
-
-const handleCreate = async (data) => {
-  
-try {
-
-  setMensaje("");
-
-  const usuarioActual = authFirebase.currentUser;
-
-  if(!usuarioActual) {
-    setMensaje("No existe un usuario autenticado");
-    return;
-  }
-
-  const doctorSeleccionado = doctores.find(
-    (doctor) => doctor.id == data.doctorId
-  );
-
-  if(!doctorSeleccionado) {
-    setMensaje("Debe seleccionar un doctor");
-    return;
-  }
-
-  const nuevaCita = {
-    pacienteId: usuarioActual.uid,
-    pacienteEmail: usuarioActual.email,
-
-    especialidad: data.especialidad,
-
-    doctorId: doctorSeleccionado.id,
-    doctorNombre: doctorSeleccionado.nombre,
-
-    fecha: data.fecha,
-    hora: data.hora,
-    modalidad: data.modalidad,
-    motivo: data.motivo,
-
-    estado: "Pendiente",
-    fechaCreacion: serverTimestamp()
-  };
-
-  await addDoc(collection(dbFirebase, "citas"), nuevaCita);
-
-  reset();
-  setMensaje("La cita fue registrada correctamente");
-  // listar inicio
-  handleGet();
-  // listar fin
-
-} catch (error) {
-  console.log(error);
-  setMensaje("No se pudo registrar la cita");
-}
-
-}
-
-// 🗑️ FUNCIÓN ELIMINAR AGREGADA
-const handleDelete = async (id) => {
-  const confirmar = confirm("¿Estás seguro de eliminar esta cita?");
-  if (confirmar) {
-    try {
-      const citaDoc = doc(dbFirebase, "citas", id);
-      await deleteDoc(citaDoc);
-      handleGet();
-      setMensaje("Cita eliminada correctamente");
-    } catch (error) {
-      console.log(error);
-      setMensaje("No se pudo eliminar la cita");
+    .header_actions {
+        width: auto;
     }
-  }
-}
-// 🗑️ FIN FUNCIÓN ELIMINAR
 
-// listar inicio
-useEffect(() => {
-  handleGet();
-}, [])
-// listar fin
+    .dashboard-title {
+        font-size: 2.8rem;
+    }
 
-  return (
-    <>
-      <section className="header_projects">
-        <div className="user-info">
-          {authFirebase.currentUser?.photoURL ? (
-            <img 
-              className="user-avatar" 
-              src={authFirebase.currentUser.photoURL} 
-              alt="Foto de perfil" 
-            />
-          ) : (
-            <div className="user-avatar-placeholder">
-              {authFirebase.currentUser?.displayName?.charAt(0) || authFirebase.currentUser?.email?.charAt(0) || '?'}
-            </div>
-          )}
-          <div>
-            {authFirebase.currentUser?.displayName && (
-              <p className="user-name">{authFirebase.currentUser.displayName}</p>
-            )}
-            <p className="user-email">{authFirebase.currentUser?.email}</p>
-          </div>
-        </div>
+    .header_projects p {
+        font-size: 1.4rem;
+    }
 
-        <div className="header_actions">
-          <button className="theme-toogle">🌙</button>
-          <button className="logout-btn" onClick={handleLogout}>Salir</button>
-        </div>
-      </section>
-    
-      <section className="container_projects">
+    .container_projects {
+        padding: 4rem 3rem;
+    }
 
-        <section className="form-section">
+    .form-section {
+        padding: 3.5rem;
+    }
 
-          <h1 className='dashboard-title'>
-            <TypeIt
-              options={{
-                speed: 100,
-                waitUntilVisible: true,
-                cursor: false
-              }}
-            >
-              Agendar <span className='highlight'>Cita Médica</span>
-            </TypeIt>
+    .form-section h4 {
+        font-size: 2.5rem;
+    }
 
-          </h1>
+    .form-section > p {
+        font-size: 1.5rem;
+    }
 
-          <p>Complete la información para registrar una nueva cita</p>
+    .route-form label {
+        font-size: 1.5rem;
+    }
 
+    .route-form input,
+    .route-form select,
+    .route-form textarea {
+        font-size: 1.5rem;
+    }
 
-          <form className="route-form" onSubmit={handleSubmit(handleCreate)}>
+    .route-form .btn {
+        width: auto;
+        min-width: 20rem;
+        align-self: flex-end;
+    }
 
-            <label>Especialidad:</label>
-            <select
-              {...register("especialidad", {
-                required: "La especialidad es requerida",
-                onChange: () => {
-                  setValue("doctorId", "")
-                }
-              })}
-            >
-              <option value="">Seleccione una especialidad</option>
+    /* listar inicio */
+    .routes-section {
+        padding: 3.5rem;
+    }
 
-              {especialidades.map((especialidad) => (
-                <option
-                  key={especialidad}
-                  value={especialidad}
-                >
-                  {especialidad}
-                </option>
-              ))}
-            </select>
+    .routes-section h4 {
+        font-size: 2.5rem;
+    }
 
-            {errors.especialidad && (<span className='errors'>{errors.especialidad.message}</span>)}
+    .routes-section > p {
+        font-size: 1.5rem;
+    }
 
-            <label>Doctor:</label>
-            <select
-              disabled={!especialidadSeleccionada}
-              {...register("doctorId", {
-                required: "El doctor es requerido"
-              })}
-            >
-              <option value="">Seleccione un doctor</option>
+    .route-info {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem 2rem;
+    }
 
-              {doctoresFiltrados.map((doctor) => (
-                <option
-                  key={doctor.id}
-                  value={doctor.id}
-                >
-                  {doctor.nombre}
-                </option>
-              ))}              
+    .route-motivo {
+        grid-column: 1 / -1;
+    }
 
-            </select>
+    .route-info p {
+        font-size: 1.5rem;
+    }
 
-            {errors.doctorId && (<span className='errors'>{errors.doctorId.message}</span>)}
+    .route-actions {
+        justify-content: flex-end;
+    }
 
-            <label>Fecha:</label>
-            <input type='date'
-              min={fechaActual}
-              {...register("fecha", {required: "La fecha es requerida"})}
-            />
-
-            {errors.fecha && (<span className='errors'>{errors.fecha.message}</span>)}
-
-            <label>Hora:</label>
-            <input type='time'
-              {...register("hora", {required: "La hora es requerida"})}
-            />
-
-            {errors.hora && (<span className='errors'>{errors.hora.message}</span>)}
-
-
-
-            <label>Modalidad:</label>
-
-            <select
-              {...register("modalidad", {required: "La modalidad es requerida"})}
-            >
-
-              <option value="Videollamada">Videollamada</option>
-
-              <option value="Chat">Chat</option>
-
-              <option value="Presencial">Presencial</option>
-
-            </select>
-
-            {errors.modalidad && (<span className='errors'>{errors.modalidad.message}</span>)}
-
-            <label>Motivo de la consulta:</label>
-            <textarea
-              placeholder='Describa brevemente el motivo de la consulta'
-              {...register("motivo", {
-                required: "El motivo es requerido",
-                minLength: {value: 10, message: "El motivo debe tener mínimo 10 caracteres"}
-              })}
-            />
-
-            {errors.motivo && (<span className='errors'>{errors.motivo.message}</span>)}
-
-            {mensaje && (<p className='mensaje-formulario'>{mensaje}</p>)}
-
-            <input className='btn'
-              type="submit"
-              value="Agendar cita"
-            />
-          </form>
-        </section>
-
-        {/* listar inicio */}
-        <section className="routes-section">
-
-          <h4>Mis citas</h4>
-          <p>Listado de citas agendadas</p>
-
-          {citas.length === 0 && (<div className="no-routes">No existen registros...</div>)}
-
-          {
-            citas.map((cita) => (
-              <div className="route-card" key={cita.id}>
-                <div className="route-info">
-                  <p>Especialidad: {cita.especialidad}</p>
-                  <p>Doctor: {cita.doctorNombre}</p>
-                  <p>Fecha: {cita.fecha}</p>
-                  <p>Hora: {cita.hora}</p>
-                  <p>Modalidad: {cita.modalidad}</p>
-                  <p>Motivo: {cita.motivo}</p>
-                  <p>Estado: {cita.estado}</p>
-                </div>
-                {/*BOTÓN ELIMINAR*/}
-                <div className="route-actions">
-                  <button 
-                    className="delete-btn"
-                    onClick={() => handleDelete(cita.id)}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))
-          }
-
-        </section>
-        {/* listar fin */}
-
-      </section>
-
-    </>
-  )
+    .delete-btn {
+        padding: 0.8rem 2rem;
+        font-size: 1.4rem;
+    }
+   
+    /* listar fin */
 }
 
-export default Dashboard
+
+/* =========================================
+   ESCRITORIO
+========================================= */
+
+@media (min-width: 1024px) {
+
+    .header_projects {
+        padding-left: 8%;
+        padding-right: 8%;
+    }
+
+    .dashboard-title {
+        font-size: 3.2rem;
+    }
+
+    .container_projects {
+        padding: 5rem 4rem;
+    }
+
+    .form-section {
+        max-width: 80rem;
+        padding: 4rem;
+    }
+
+    .form-section h4 {
+        font-size: 2.7rem;
+    }
+
+    /* listar inicio */
+    .routes-section {
+        max-width: 80rem;
+        padding: 4rem;
+    }
+
+    .routes-section h4 {
+        font-size: 2.7rem;
+    }
+
+    .delete-btn {
+        padding: 0.9rem 2.5rem;
+        font-size: 1.5rem;
+    }
+    /* listar fin */
+}
