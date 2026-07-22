@@ -93,7 +93,7 @@
     gap: 1rem;
 }
 
-.theme-toogle,
+.theme-toggle,
 .logout-btn {
     min-height: 4rem;
     padding: 0.8rem 1.6rem;
@@ -109,7 +109,7 @@
         background-color 0.3s ease;
 }
 
-.theme-toogle {
+.theme-toggle {
     width: 4.2rem;
     padding: 0;
     background-color: var(--colorFondoSeccion);
@@ -124,7 +124,7 @@
     color: var(--colorBlanco);
 }
 
-.theme-toogle:hover,
+.theme-toggle:hover,
 .logout-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 7px 14px rgba(0, 0, 0, 0.14);
@@ -134,7 +134,7 @@
     background-color: #219653;
 }
 
-.theme-toogle:active,
+.theme-toggle:active,
 .logout-btn:active {
     transform: translateY(0);
 }
@@ -555,10 +555,11 @@
         justify-content: flex-end;
     }
 
-    .delete-btn {
-        padding: 0.8rem 2rem;
-        font-size: 1.4rem;
-    }
+.update-btn,
+.delete-btn {
+    padding: 0.8rem 2rem;
+    font-size: 1.4rem;
+}
    
     /* listar fin */
 }
@@ -602,9 +603,132 @@
         font-size: 2.7rem;
     }
 
-    .delete-btn {
-        padding: 0.9rem 2.5rem;
-        font-size: 1.5rem;
-    }
+.update-btn,
+.delete-btn {
+    padding: 0.9rem 2.5rem;
+    font-size: 1.5rem;
+}
     /* listar fin */
+}
+
+.cancel-btn {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 1.2rem 2rem;
+    border: 1px solid #d7dce2;
+    border-radius: 1.2rem;
+    background-color: var(--colorBlanco);
+    color: #555555;
+    font-family: var(--fuentePrincipal);
+    font-size: 1.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+    background-color: #eeeeee;
+    transform: translateY(-2px);
+}
+
+.update-btn {
+    padding: 0.7rem 1.8rem;
+    border: none;
+    border-radius: 0.8rem;
+    background-color: var(--colorSecundario);
+    color: var(--colorBlanco);
+    font-family: var(--fuentePrincipal);
+    font-size: 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        background-color 0.3s ease;
+}
+
+.update-btn:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+}
+
+.update-btn:active {
+    transform: translateY(0);
+}
+
+/* =========================================
+   MODO OSCURO
+========================================= */
+
+:root.dark-mode {
+    --colorFondoSeccion: #111827;
+    --colorBlanco: #1f2937;
+    --colorNegro: #f5f7fa;
+}
+
+:root.dark-mode body {
+    background-color: #111827;
+    color: #f5f7fa;
+}
+
+:root.dark-mode .header_projects,
+:root.dark-mode .form-section,
+:root.dark-mode .routes-section {
+    background-color: #1f2937;
+    color: #f5f7fa;
+}
+
+:root.dark-mode .container_projects {
+    background-color: #111827;
+}
+
+:root.dark-mode .route-card,
+:root.dark-mode .no-routes,
+:root.dark-mode .theme-toggle {
+    background-color: #273449;
+}
+
+:root.dark-mode .route-form input,
+:root.dark-mode .route-form select,
+:root.dark-mode .route-form textarea,
+:root.dark-mode .cancel-btn {
+    background-color: #273449;
+    color: #f5f7fa;
+    border-color: #475569;
+}
+
+:root.dark-mode .route-form select:disabled {
+    background-color: #374151;
+    color: #94a3b8;
+}
+
+:root.dark-mode .route-form label,
+:root.dark-mode .route-info p,
+:root.dark-mode .route-especialidad {
+    color: #f5f7fa;
+}
+
+:root.dark-mode .form-section > p,
+:root.dark-mode .routes-section > p,
+:root.dark-mode .user-email,
+:root.dark-mode .header_projects p {
+    color: #cbd5e1;
+}
+
+:root.dark-mode .route-card,
+:root.dark-mode .header_projects,
+:root.dark-mode .route-card-header,
+:root.dark-mode .route-actions,
+:root.dark-mode .route-motivo {
+    border-color: #374151;
+}
+
+:root.dark-mode .route-form input::placeholder,
+:root.dark-mode .route-form textarea::placeholder {
+    color: #94a3b8;
+}
+
+:root.dark-mode .cancel-btn:hover {
+    background-color: #374151;
 }

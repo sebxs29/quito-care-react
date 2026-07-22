@@ -1,20 +1,33 @@
-import './Dashboard.css'
-import { authFirebase, dbFirebase } from '../firebase'
+import './Dashboard.css';
+import { authFirebase, dbFirebase } from '../firebase';
 
 import { useForm } from 'react-hook-form';
-
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { signOut } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
+
+import { ToastContainer, toast } from "react-toastify";
+
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+  doc,
+  updateDoc
+} from 'firebase/firestore';
 
 import TypeIt from 'typeit-react';
+
 
 const doctores = [
   {
     id: "doctor-1",
     nombre: "Dr. Sebastián Toapanta",
     especialidad: "Medicina general"
-  }, 
+  },
   {
     id: "doctor-2",
     nombre: "Dr. Andrés Oto",
@@ -32,352 +45,918 @@ const doctores = [
   },
   {
     id: "doctor-5",
-    nombre: "Dr. Joel Freeire",
+    nombre: "Dr. Joel Freire",
     especialidad: "Nutrición"
   },
   {
     id: "doctor-6",
-    nombre : "Dra. Melanie Vera",
+    nombre: "Dra. Melanie Vera",
     especialidad: "Dermatología"
   },
   {
     id: "doctor-7",
     nombre: "Dra. Annabel Gómez",
     especialidad: "Gastroenterología"
-  } 
+  }
+];
 
-]
 
 const especialidades = [
-  ...new Set(doctores.map((doctor) => doctor.especialidad))
+  ...new Set(
+    doctores.map((doctor) => doctor.especialidad)
+  )
 ];
 
 
 const Dashboard = () => {
 
-const { register, handleSubmit, reset, watch, setValue, formState: {errors}} = useForm();
-  
-const especialidadSeleccionada = watch("especialidad");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors }
+  } = useForm({
+    defaultValues: {
+      especialidad: "",
+      doctorId: "",
+      fecha: "",
+      hora: "",
+      modalidad: "Videollamada",
+      motivo: ""
+    }
+  });
 
-const doctoresFiltrados = doctores.filter(
-  (doctor) =>
-    doctor.especialidad === especialidadSeleccionada
-);
+  const [citas, setCitas] = useState([]);
 
-const fechaActual = new Date().toISOString().split("T")[0];
+  // DARK
+const [modoOscuro, setModoOscuro] = useState(() => {
+  return localStorage.getItem("tema") === "oscuro";
+});
 
-const [mensaje, setMensaje] = useState("");
+useEffect(() => {
+  document.documentElement.classList.toggle(
+    "dark-mode",
+    modoOscuro
+  );
 
-// listar inicio
-const [citas, setCitas] = useState([]);
-// listar fin
+  localStorage.setItem(
+    "tema",
+    modoOscuro ? "oscuro" : "claro"
+  );
+}, [modoOscuro]);
 
-const handleLogout = async () => {
+const handleChangeColor = () => {
+  setModoOscuro((estadoAnterior) => !estadoAnterior);
+};
 
-  try {
-    await signOut(authFirebase);
-    window.location.href = "/";
-  } catch (error) {
-    console.log(error);
-  }
+  // Guarda el ID de la cita que se está actualizando
+  const [id, setId] = useState("");
 
-}
 
-// listar inicio
-const handleGet = async () => {
+  const especialidadSeleccionada = watch("especialidad");
+
+
+  const doctoresFiltrados = doctores.filter(
+    (doctor) =>
+      doctor.especialidad === especialidadSeleccionada
+  );
+
+
+  const fechaActual = new Date()
+    .toISOString()
+    .split("T")[0];
+
+
+  // CERRAR SESIÓN
+  const handleLogout = async () => {
+
+    try {
+
+      await signOut(authFirebase);
+
+      window.location.href = "/";
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  };
+
+
+  // LISTAR LAS CITAS DEL USUARIO AUTENTICADO
+  const handleGet = async () => {
+
+    try {
+
+      const usuarioActual = authFirebase.currentUser;
+
+      if (!usuarioActual) {
+        return;
+      }
+
+
+      const citasQuery = query(
+        collection(dbFirebase, "citas"),
+        where(
+          "pacienteId",
+          "==",
+          usuarioActual.uid
+        )
+      );
+
+
+      const snapshot = await getDocs(citasQuery);
+
+
+      const documentos = snapshot.docs.map(
+        (documento) => ({
+          ...documento.data(),
+          id: documento.id
+        })
+      );
+
+
+      setCitas(documentos);
+
+    } catch (error) {
+
+      console.log(error);
+      toast.error("No se pudieron cargar las citas");
+
+    }
+
+  };
+
+
+  // CREAR O ACTUALIZAR UNA CITA
+const handleCreate = async (data) => {
+
+  const estaActualizando = Boolean(id);
 
   try {
 
     const usuarioActual = authFirebase.currentUser;
 
-    if(!usuarioActual) {
+    if (!usuarioActual) {
+      toast.error("No existe un usuario autenticado");
       return;
     }
 
-    const citasQuery = query(
-      collection(dbFirebase, "citas"),
-      where("pacienteId", "==", usuarioActual.uid)
+    const doctorSeleccionado = doctores.find(
+      (doctor) => doctor.id === data.doctorId
     );
 
-    const snapshot = await getDocs(citasQuery);
-    const documentos = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+    if (!doctorSeleccionado) {
+      toast.warning("Debe seleccionar un doctor");
+      return;
+    }
 
-    setCitas(documentos);
+    const datosCita = {
+      especialidad: data.especialidad,
+      doctorId: doctorSeleccionado.id,
+      doctorNombre: doctorSeleccionado.nombre,
+      fecha: data.fecha,
+      hora: data.hora,
+      modalidad: data.modalidad,
+      motivo: data.motivo
+    };
+
+    if (estaActualizando) {
+
+      await updateDoc(
+        doc(dbFirebase, "citas", id),
+        {
+          ...datosCita,
+          fechaActualizacion: serverTimestamp()
+        }
+      );
+
+      setId("");
+
+      toast.success(
+        "Cita actualizada correctamente"
+      );
+
+    } else {
+
+      const nuevaCita = {
+        pacienteId: usuarioActual.uid,
+        pacienteEmail: usuarioActual.email,
+        ...datosCita,
+        estado: "Pendiente",
+        fechaCreacion: serverTimestamp()
+      };
+
+      await addDoc(
+        collection(dbFirebase, "citas"),
+        nuevaCita
+      );
+
+      toast.success(
+        "Cita agendada correctamente"
+      );
+    }
+
+    reset({
+      especialidad: "",
+      doctorId: "",
+      fecha: "",
+      hora: "",
+      modalidad: "Videollamada",
+      motivo: ""
+    });
+
+    await handleGet();
 
   } catch (error) {
-    console.log(error);
+
+    console.error(error);
+
+    toast.error(
+      estaActualizando
+        ? "No se pudo actualizar la cita"
+        : "No se pudo registrar la cita"
+    );
   }
+};
 
-}
-// listar fin
 
-const handleCreate = async (data) => {
-  
-try {
+  // CARGAR LOS DATOS DE UNA CITA EN EL FORMULARIO
+  const handleEdit = (cita) => {
 
-  setMensaje("");
+    setId(cita.id);
 
-  const usuarioActual = authFirebase.currentUser;
 
-  if(!usuarioActual) {
-    setMensaje("No existe un usuario autenticado");
-    return;
-  }
+    reset({
+      especialidad: cita.especialidad,
+      doctorId: cita.doctorId,
+      fecha: cita.fecha,
+      hora: cita.hora,
+      modalidad: cita.modalidad,
+      motivo: cita.motivo
+    });
 
-  const doctorSeleccionado = doctores.find(
-    (doctor) => doctor.id == data.doctorId
-  );
 
-  if(!doctorSeleccionado) {
-    setMensaje("Debe seleccionar un doctor");
-    return;
-  }
+    toast.warning(
+      "Está editando una cita"
+    );
 
-  const nuevaCita = {
-    pacienteId: usuarioActual.uid,
-    pacienteEmail: usuarioActual.email,
 
-    especialidad: data.especialidad,
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
 
-    doctorId: doctorSeleccionado.id,
-    doctorNombre: doctorSeleccionado.nombre,
-
-    fecha: data.fecha,
-    hora: data.hora,
-    modalidad: data.modalidad,
-    motivo: data.motivo,
-
-    estado: "Pendiente",
-    fechaCreacion: serverTimestamp()
   };
 
-  await addDoc(collection(dbFirebase, "citas"), nuevaCita);
 
-  reset();
-  setMensaje("La cita fue registrada correctamente");
-  // listar inicio
-  handleGet();
-  // listar fin
+  // CANCELAR LA ACTUALIZACIÓN
+  const handleCancelEdit = () => {
 
-} catch (error) {
-  console.log(error);
-  setMensaje("No se pudo registrar la cita");
-}
+    setId("");
 
-}
 
-// 🗑️ FUNCIÓN ELIMINAR AGREGADA
-const handleDelete = async (id) => {
-  const confirmar = confirm("¿Estás seguro de eliminar esta cita?");
-  if (confirmar) {
-    try {
-      const citaDoc = doc(dbFirebase, "citas", id);
-      await deleteDoc(citaDoc);
-      handleGet();
-      setMensaje("Cita eliminada correctamente");
-    } catch (error) {
-      console.log(error);
-      setMensaje("No se pudo eliminar la cita");
-    }
+    reset({
+      especialidad: "",
+      doctorId: "",
+      fecha: "",
+      hora: "",
+      modalidad: "Videollamada",
+      motivo: ""
+    });
+
+
+  };
+
+
+  // ELIMINAR UNA CITA
+const handleDelete = async (idCita) => {
+
+  const confirmar = window.confirm(
+    "¿Estás seguro de eliminar esta cita?"
+  );
+
+  if (!confirmar) {
+    return;
   }
-}
-// 🗑️ FIN FUNCIÓN ELIMINAR
 
-// listar inicio
-useEffect(() => {
-  handleGet();
-}, [])
-// listar fin
+  try {
+
+    await deleteDoc(
+      doc(dbFirebase, "citas", idCita)
+    );
+
+    if (id === idCita) {
+      handleCancelEdit();
+    }
+
+    await handleGet();
+
+    toast.success(
+      "Cita eliminada correctamente"
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast.error(
+      "No se pudo eliminar la cita"
+    );
+  }
+};
+
+
+  // CARGAR LAS CITAS CUANDO SE ABRE EL DASHBOARD
+  useEffect(() => {
+
+    handleGet();
+
+  }, []);
+
 
   return (
     <>
+    <ToastContainer
+      position="top-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop
+      closeOnClick
+      pauseOnHover
+      limit={3}
+      theme={modoOscuro ? "dark" : "light"}
+    />
+
+    <section className="header_projects"></section>
+
+
       <section className="header_projects">
+
         <div className="user-info">
+
           {authFirebase.currentUser?.photoURL ? (
-            <img 
-              className="user-avatar" 
-              src={authFirebase.currentUser.photoURL} 
-              alt="Foto de perfil" 
+
+            <img
+              className="user-avatar"
+              src={
+                authFirebase.currentUser.photoURL
+              }
+              alt="Foto de perfil"
             />
+
           ) : (
+
             <div className="user-avatar-placeholder">
-              {authFirebase.currentUser?.displayName?.charAt(0) || authFirebase.currentUser?.email?.charAt(0) || '?'}
+
+              {
+                authFirebase.currentUser
+                  ?.displayName
+                  ?.charAt(0)
+                ||
+                authFirebase.currentUser
+                  ?.email
+                  ?.charAt(0)
+                ||
+                "?"
+              }
+
             </div>
+
           )}
+
+
           <div>
-            {authFirebase.currentUser?.displayName && (
-              <p className="user-name">{authFirebase.currentUser.displayName}</p>
-            )}
-            <p className="user-email">{authFirebase.currentUser?.email}</p>
+
+            {
+              authFirebase.currentUser
+                ?.displayName
+              &&
+              (
+                <p className="user-name">
+
+                  {
+                    authFirebase
+                      .currentUser
+                      .displayName
+                  }
+
+                </p>
+              )
+            }
+
+
+            <p className="user-email">
+
+              {
+                authFirebase
+                  .currentUser
+                  ?.email
+              }
+
+            </p>
+
           </div>
+
         </div>
 
+
         <div className="header_actions">
-          <button className="theme-toogle">🌙</button>
-          <button className="logout-btn" onClick={handleLogout}>Salir</button>
+
+<button
+  type="button"
+  className="theme-toggle"
+  onClick={handleChangeColor}
+  aria-label={
+    modoOscuro
+      ? "Activar modo claro"
+      : "Activar modo oscuro"
+  }
+  title={
+    modoOscuro
+      ? "Activar modo claro"
+      : "Activar modo oscuro"
+  }
+>
+  {modoOscuro ? "☀️" : "🌙"}
+</button>
+
+
+          <button
+            className="logout-btn"
+            onClick={handleLogout}
+          >
+            Salir
+          </button>
+
         </div>
+
       </section>
-    
+
+
       <section className="container_projects">
 
         <section className="form-section">
 
-          <h1 className='dashboard-title'>
+          <h1 className="dashboard-title">
+
             <TypeIt
+              key={
+                id
+                  ? `actualizar-${id}`
+                  : "agendar"
+              }
               options={{
                 speed: 100,
                 waitUntilVisible: true,
                 cursor: false
               }}
             >
-              Agendar <span className='highlight'>Cita Médica</span>
+
+              {
+                id
+                  ? "Actualizar "
+                  : "Agendar "
+              }
+
+              <span className="highlight">
+                Cita Médica
+              </span>
+
             </TypeIt>
 
           </h1>
 
-          <p>Complete la información para registrar una nueva cita</p>
+
+          <p>
+
+            {
+              id
+                ? "Modifique la información de la cita seleccionada"
+                : "Complete la información para registrar una nueva cita"
+            }
+
+          </p>
 
 
-          <form className="route-form" onSubmit={handleSubmit(handleCreate)}>
+          <form
+            className="route-form"
+            onSubmit={
+              handleSubmit(handleCreate)
+            }
+          >
 
-            <label>Especialidad:</label>
+            <label>
+              Especialidad:
+            </label>
+
+
             <select
-              {...register("especialidad", {
-                required: "La especialidad es requerida",
-                onChange: () => {
-                  setValue("doctorId", "")
+              {...register(
+                "especialidad",
+                {
+                  required:
+                    "La especialidad es requerida",
+
+                  onChange: () => {
+
+                    setValue(
+                      "doctorId",
+                      ""
+                    );
+
+                  }
                 }
-              })}
+              )}
             >
-              <option value="">Seleccione una especialidad</option>
 
-              {especialidades.map((especialidad) => (
-                <option
-                  key={especialidad}
-                  value={especialidad}
-                >
-                  {especialidad}
-                </option>
-              ))}
+              <option value="">
+                Seleccione una especialidad
+              </option>
+
+
+              {
+                especialidades.map(
+                  (especialidad) => (
+
+                    <option
+                      key={especialidad}
+                      value={especialidad}
+                    >
+                      {especialidad}
+                    </option>
+
+                  )
+                )
+              }
+
             </select>
 
-            {errors.especialidad && (<span className='errors'>{errors.especialidad.message}</span>)}
 
-            <label>Doctor:</label>
+            {
+              errors.especialidad
+              &&
+              (
+                <span className="errors">
+
+                  {
+                    errors
+                      .especialidad
+                      .message
+                  }
+
+                </span>
+              )
+            }
+
+
+            <label>
+              Doctor:
+            </label>
+
+
             <select
-              disabled={!especialidadSeleccionada}
-              {...register("doctorId", {
-                required: "El doctor es requerido"
-              })}
+              disabled={
+                !especialidadSeleccionada
+              }
+              {...register(
+                "doctorId",
+                {
+                  required:
+                    "El doctor es requerido"
+                }
+              )}
             >
-              <option value="">Seleccione un doctor</option>
 
-              {doctoresFiltrados.map((doctor) => (
-                <option
-                  key={doctor.id}
-                  value={doctor.id}
-                >
-                  {doctor.nombre}
-                </option>
-              ))}              
+              <option value="">
+                Seleccione un doctor
+              </option>
+
+
+              {
+                doctoresFiltrados.map(
+                  (doctor) => (
+
+                    <option
+                      key={doctor.id}
+                      value={doctor.id}
+                    >
+                      {doctor.nombre}
+                    </option>
+
+                  )
+                )
+              }
 
             </select>
 
-            {errors.doctorId && (<span className='errors'>{errors.doctorId.message}</span>)}
 
-            <label>Fecha:</label>
-            <input type='date'
+            {
+              errors.doctorId
+              &&
+              (
+                <span className="errors">
+
+                  {
+                    errors
+                      .doctorId
+                      .message
+                  }
+
+                </span>
+              )
+            }
+
+
+            <label>
+              Fecha:
+            </label>
+
+
+            <input
+              type="date"
               min={fechaActual}
-              {...register("fecha", {required: "La fecha es requerida"})}
+              {...register(
+                "fecha",
+                {
+                  required:
+                    "La fecha es requerida"
+                }
+              )}
             />
 
-            {errors.fecha && (<span className='errors'>{errors.fecha.message}</span>)}
 
-            <label>Hora:</label>
-            <input type='time'
-              {...register("hora", {required: "La hora es requerida"})}
+            {
+              errors.fecha
+              &&
+              (
+                <span className="errors">
+
+                  {
+                    errors
+                      .fecha
+                      .message
+                  }
+
+                </span>
+              )
+            }
+
+
+            <label>
+              Hora:
+            </label>
+
+
+            <input
+              type="time"
+              {...register(
+                "hora",
+                {
+                  required:
+                    "La hora es requerida"
+                }
+              )}
             />
 
-            {errors.hora && (<span className='errors'>{errors.hora.message}</span>)}
+
+            {
+              errors.hora
+              &&
+              (
+                <span className="errors">
+
+                  {
+                    errors
+                      .hora
+                      .message
+                  }
+
+                </span>
+              )
+            }
 
 
+            <label>
+              Modalidad:
+            </label>
 
-            <label>Modalidad:</label>
 
             <select
-              {...register("modalidad", {required: "La modalidad es requerida"})}
+              {...register(
+                "modalidad",
+                {
+                  required:
+                    "La modalidad es requerida"
+                }
+              )}
             >
 
-              <option value="Videollamada">Videollamada</option>
+              <option value="Videollamada">
+                Videollamada
+              </option>
 
-              <option value="Chat">Chat</option>
+              <option value="Chat">
+                Chat
+              </option>
 
-              <option value="Presencial">Presencial</option>
+              <option value="Presencial">
+                Presencial
+              </option>
 
             </select>
 
-            {errors.modalidad && (<span className='errors'>{errors.modalidad.message}</span>)}
 
-            <label>Motivo de la consulta:</label>
+            {
+              errors.modalidad
+              &&
+              (
+                <span className="errors">
+
+                  {
+                    errors
+                      .modalidad
+                      .message
+                  }
+
+                </span>
+              )
+            }
+
+
+            <label>
+              Motivo de la consulta:
+            </label>
+
+
             <textarea
-              placeholder='Describa brevemente el motivo de la consulta'
-              {...register("motivo", {
-                required: "El motivo es requerido",
-                minLength: {value: 10, message: "El motivo debe tener mínimo 10 caracteres"}
-              })}
+              placeholder="Describa brevemente el motivo de la consulta"
+              {...register(
+                "motivo",
+                {
+                  required:
+                    "El motivo es requerido",
+
+                  minLength: {
+                    value: 10,
+
+                    message:
+                      "El motivo debe tener mínimo 10 caracteres"
+                  }
+                }
+              )}
             />
 
-            {errors.motivo && (<span className='errors'>{errors.motivo.message}</span>)}
 
-            {mensaje && (<p className='mensaje-formulario'>{mensaje}</p>)}
+            {
+              errors.motivo
+              &&
+              (
+                <span className="errors">
 
-            <input className='btn'
+                  {
+                    errors
+                      .motivo
+                      .message
+                  }
+
+                </span>
+              )
+            }
+
+            <input
+              className="btn"
               type="submit"
-              value="Agendar cita"
+              value={
+                id
+                  ? "Actualizar cita"
+                  : "Agendar cita"
+              }
             />
+
+
+            {
+              id
+              &&
+              (
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={handleCancelEdit}
+                >
+                  Cancelar edición
+                </button>
+              )
+            }
+
           </form>
+
         </section>
 
-        {/* listar inicio */}
+
         <section className="routes-section">
 
-          <h4>Mis citas</h4>
-          <p>Listado de citas agendadas</p>
+          <h4>
+            Mis citas
+          </h4>
 
-          {citas.length === 0 && (<div className="no-routes">No existen registros...</div>)}
+          <p>
+            Listado de citas agendadas
+          </p>
+
+
+          {
+            citas.length === 0
+            &&
+            (
+              <div className="no-routes">
+                No existen registros...
+              </div>
+            )
+          }
+
 
           {
             citas.map((cita) => (
-              <div className="route-card" key={cita.id}>
+
+              <div
+                className="route-card"
+                key={cita.id}
+              >
+
                 <div className="route-info">
-                  <p>Especialidad: {cita.especialidad}</p>
-                  <p>Doctor: {cita.doctorNombre}</p>
-                  <p>Fecha: {cita.fecha}</p>
-                  <p>Hora: {cita.hora}</p>
-                  <p>Modalidad: {cita.modalidad}</p>
-                  <p>Motivo: {cita.motivo}</p>
-                  <p>Estado: {cita.estado}</p>
+
+                  <p>
+                    Especialidad: {cita.especialidad}
+                  </p>
+
+                  <p>
+                    Doctor: {cita.doctorNombre}
+                  </p>
+
+                  <p>
+                    Fecha: {cita.fecha}
+                  </p>
+
+                  <p>
+                    Hora: {cita.hora}
+                  </p>
+
+                  <p>
+                    Modalidad: {cita.modalidad}
+                  </p>
+
+                  <p>
+                    Motivo: {cita.motivo}
+                  </p>
+
+                  <p>
+                    Estado: {cita.estado}
+                  </p>
+
                 </div>
-                {/*BOTÓN ELIMINAR*/}
+
+
                 <div className="route-actions">
-                  <button 
+
+                  <button
+                    type="button"
+                    className="update-btn"
+                    onClick={() => {
+                      handleEdit(cita);
+                    }}
+                  >
+                    Actualizar
+                  </button>
+
+
+                  <button
+                    type="button"
                     className="delete-btn"
-                    onClick={() => handleDelete(cita.id)}
+                    onClick={() => {
+                      handleDelete(cita.id);
+                    }}
                   >
                     Eliminar
                   </button>
+
                 </div>
+
               </div>
+
             ))
           }
 
         </section>
-        {/* listar fin */}
 
       </section>
 
     </>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;
