@@ -192,11 +192,28 @@ useEffect(() => {
   return (
     <>
       <section className="header_projects">
-        <p>Bienvenido - {authFirebase.currentUser?.email}</p>
+        <div className="user-info">
+          {authFirebase.currentUser?.photoURL ? (
+            <img 
+              className="user-avatar" 
+              src={authFirebase.currentUser.photoURL} 
+              alt="Foto de perfil" 
+            />
+          ) : (
+            <div className="user-avatar-placeholder">
+              {authFirebase.currentUser?.displayName?.charAt(0) || authFirebase.currentUser?.email?.charAt(0) || '?'}
+            </div>
+          )}
+          <div>
+            {authFirebase.currentUser?.displayName && (
+              <p className="user-name">{authFirebase.currentUser.displayName}</p>
+            )}
+            <p className="user-email">{authFirebase.currentUser?.email}</p>
+          </div>
+        </div>
 
         <div className="header_actions">
           <button className="theme-toogle">🌙</button>
-
           <button className="logout-btn" onClick={handleLogout}>Salir</button>
         </div>
       </section>
