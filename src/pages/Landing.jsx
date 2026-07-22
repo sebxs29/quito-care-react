@@ -9,23 +9,21 @@ import Header from "../components/header/Header"
 import Hero from "../components/hero/Hero"
 import Partners from "../components/partners/Partners"
 import Team from "../components/team/Team"
-import Testimonials from "../components/testimonials/Testimonials"
 
 const Landing = () => {
   return (
     <>
-    <Header/>
-    <Hero/>
-    <Benefits/>
-    <Testimonials/>
-    <Team/>
-    <About/>
-    <Faq/>
-    <Cta/>
-    <Download/>
-    <Partners/>
-    <Contact/>
-    <Footer/>
+      <Header/>
+      <Hero/>
+      <Benefits/>
+      <Team/>
+      <About/>
+      <Faq/>
+      <Cta/>
+      <Download/>
+      <Partners/>
+      <Contact/>
+      <Footer/>
     </>
   )
 }
