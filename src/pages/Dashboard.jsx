@@ -147,6 +147,18 @@ const handleChangeColor = () => {
   };
 
 
+  const getEstadoColor = (estado) => {
+    const colores = {
+      'Pendiente': '#f39c12',
+      'Confirmada': '#27ae60',
+      'Completada': '#3498db',
+      'Cancelada': '#e74c3c',
+      'Inasistencia': '#95a5a6'
+    };
+    return colores[estado] || '#95a5a6';
+  };
+
+
   // LISTAR LAS CITAS DEL USUARIO AUTENTICADO
   const handleGet = async () => {
 
@@ -171,14 +183,28 @@ const handleChangeColor = () => {
 
       const snapshot = await getDocs(citasQuery);
 
+      const ahora = new Date();
+      const documentos = [];
 
-      const documentos = snapshot.docs.map(
-        (documento) => ({
-          ...documento.data(),
-          id: documento.id
-        })
-      );
+      for (const documento of snapshot.docs) {
+        const cita = { ...documento.data(), id: documento.id };
 
+        if (cita.fecha && cita.hora) {
+          const fechaCita = new Date(`${cita.fecha}T${cita.hora}`);
+
+          if (fechaCita < ahora && (cita.estado === "Pendiente" || cita.estado === "Confirmada")) {
+            const nuevoEstado = cita.estado === "Pendiente"
+              ? "Inasistencia"
+              : "Completada";
+
+            const citaRef = doc(dbFirebase, "citas", documento.id);
+            await updateDoc(citaRef, { estado: nuevoEstado });
+            cita.estado = nuevoEstado;
+          }
+        }
+
+        documentos.push(cita);
+      }
 
       setCitas(documentos);
 
@@ -215,38 +241,143 @@ const handleCreate = async (data) => {
       return;
     }
 
-    const datosCita = {
-      especialidad: data.especialidad,
-      doctorId: doctorSeleccionado.id,
-      doctorNombre: doctorSeleccionado.nombre,
-      fecha: data.fecha,
-      hora: data.hora,
-      modalidad: data.modalidad,
-      motivo: data.motivo
-    };
+    // VALIDACIÓN 0: Verificar horario de atención
+    const fechaSeleccionada = new Date(data.fecha + "T00:00:00");
+    const diaSemana = fechaSeleccionada.getDay();
+    const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const nombreDia = diasSemana[diaSemana];
 
+    if (diaSemana === 0) {
+      toast.error("❌ Los domingos la clínica está cerrada. Solo emergencias por WhatsApp");
+      return;
+    }
+
+    const [horaNum, minutoNum] = data.hora.split(":").map(Number);
+    const horaTotal = horaNum + (minutoNum / 60);
+
+    let horarioInicio, horarioFin, mensajeHorario;
+
+    if (diaSemana === 6) {
+      horarioInicio = 9.0;
+      horarioFin = 14.0;
+      mensajeHorario = "09:00 a 14:00";
+    } else {
+      horarioInicio = 8.0;
+      horarioFin = 19.0;
+      mensajeHorario = "08:00 a 19:00";
+    }
+
+    if (horaTotal < horarioInicio || horaTotal > horarioFin) {
+      toast.error(`❌ Los ${nombreDia} el horario de atención es de ${mensajeHorario}`);
+      return;
+    }
+
+    // VALIDACIÓN 1: Verificar disponibilidad del doctor
+    const doctorQuery = query(
+      collection(dbFirebase, "citas"),
+      where("doctorId", "==", doctorSeleccionado.id),
+      where("fecha", "==", data.fecha),
+      where("hora", "==", data.hora)
+    );
+    const doctorSnapshot = await getDocs(doctorQuery);
+
+    if (estaActualizando) {
+      const ocupadaPorOtro = doctorSnapshot.docs.some(
+        (documento) => documento.id !== id
+      );
+      if (ocupadaPorOtro) {
+        toast.error("❌ El doctor ya tiene una cita agendada en esa fecha y hora");
+        return;
+      }
+    } else {
+      if (!doctorSnapshot.empty) {
+        toast.error("❌ El doctor ya tiene una cita agendada en esa fecha y hora");
+        return;
+      }
+    }
+
+    // VALIDACIÓN 2: Verificar si el paciente ya tiene cita en ese horario
+    const pacienteQuery = query(
+      collection(dbFirebase, "citas"),
+      where("pacienteId", "==", usuarioActual.uid),
+      where("fecha", "==", data.fecha),
+      where("hora", "==", data.hora)
+    );
+    const pacienteSnapshot = await getDocs(pacienteQuery);
+
+    if (estaActualizando) {
+      const pacienteOcupado = pacienteSnapshot.docs.some(
+        (documento) => documento.id !== id
+      );
+      if (pacienteOcupado) {
+        toast.error("❌ Ya tienes una cita agendada en esa fecha y hora");
+        return;
+      }
+    } else {
+      if (!pacienteSnapshot.empty) {
+        toast.error("❌ Ya tienes una cita agendada en esa fecha y hora");
+        return;
+      }
+    }
+
+    // VALIDACIÓN 3: Verificar tiempo mínimo entre citas (1 hora)
+    const pacienteCitasQuery = query(
+      collection(dbFirebase, "citas"),
+      where("pacienteId", "==", usuarioActual.uid),
+      where("fecha", "==", data.fecha)
+    );
+    const pacienteCitasSnapshot = await getDocs(pacienteCitasQuery);
+
+    for (const documento of pacienteCitasSnapshot.docs) {
+      if (estaActualizando && documento.id === id) continue;
+
+      const citaExistente = documento.data();
+      const [horaExistente, minutoExistente] = citaExistente.hora.split(":").map(Number);
+      const [horaNueva, minutoNueva] = data.hora.split(":").map(Number);
+
+      const totalMinExistente = horaExistente * 60 + minutoExistente;
+      const totalMinNueva = horaNueva * 60 + minutoNueva;
+      const diferencia = Math.abs(totalMinNueva - totalMinExistente);
+
+      if (diferencia < 60) {
+        toast.error("❌ Debe haber al menos 1 hora entre tus citas");
+        return;
+      }
+    }
+
+    // Si pasa todas las validaciones, guardar la cita
     if (estaActualizando) {
 
       await updateDoc(
         doc(dbFirebase, "citas", id),
         {
-          ...datosCita,
+          especialidad: data.especialidad,
+          doctorId: doctorSeleccionado.id,
+          doctorNombre: doctorSeleccionado.nombre,
+          fecha: data.fecha,
+          hora: data.hora,
+          modalidad: data.modalidad,
+          motivo: data.motivo,
           fechaActualizacion: serverTimestamp()
         }
       );
 
       setId("");
 
-      toast.success(
-        "Cita actualizada correctamente"
-      );
+      toast.success("✅ Cita actualizada correctamente");
 
     } else {
 
       const nuevaCita = {
         pacienteId: usuarioActual.uid,
         pacienteEmail: usuarioActual.email,
-        ...datosCita,
+        especialidad: data.especialidad,
+        doctorId: doctorSeleccionado.id,
+        doctorNombre: doctorSeleccionado.nombre,
+        fecha: data.fecha,
+        hora: data.hora,
+        modalidad: data.modalidad,
+        motivo: data.motivo,
         estado: "Pendiente",
         fechaCreacion: serverTimestamp()
       };
@@ -256,9 +387,7 @@ const handleCreate = async (data) => {
         nuevaCita
       );
 
-      toast.success(
-        "Cita agendada correctamente"
-      );
+      toast.success("✅ Cita agendada correctamente");
     }
 
     reset({
@@ -278,8 +407,8 @@ const handleCreate = async (data) => {
 
     toast.error(
       estaActualizando
-        ? "No se pudo actualizar la cita"
-        : "No se pudo registrar la cita"
+        ? "❌ No se pudo actualizar la cita"
+        : "❌ No se pudo registrar la cita"
     );
   }
 };
@@ -801,11 +930,39 @@ const handleDelete = async (idCita) => {
                   required:
                     "El motivo es requerido",
 
-                  minLength: {
-                    value: 10,
-
-                    message:
-                      "El motivo debe tener mínimo 10 caracteres"
+                  validate: {
+                    noSoloEspacios: (valor) => {
+                      if (/^\s*$/.test(valor)) {
+                        return "❌ El motivo no puede estar vacío o contener solo espacios";
+                      }
+                      return true;
+                    },
+                    caracteresSignificativos: (valor) => {
+                      const chars = valor.replace(/\s/g, "").length;
+                      if (chars < 10) {
+                        return "❌ El motivo debe tener al menos 10 caracteres significativos (sin contar espacios)";
+                      }
+                      return true;
+                    },
+                    minimoPalabras: (valor) => {
+                      const palabras = valor.trim().split(/\s+/);
+                      if (palabras.length < 3) {
+                        return "❌ El motivo debe tener al menos 3 palabras para describir el motivo de la consulta";
+                      }
+                      return true;
+                    },
+                    noCaracteresRepetidos: (valor) => {
+                      if (/(.)\1{4,}/.test(valor)) {
+                        return "❌ El motivo contiene demasiados caracteres repetidos";
+                      }
+                      return true;
+                    },
+                    caracteresPermitidos: (valor) => {
+                      if (!/^[a-zA-ZáéíóúñÑü\s\d.,;:!?()\-]+$/.test(valor)) {
+                        return "❌ El motivo solo puede contener letras, números, espacios y puntuación básica";
+                      }
+                      return true;
+                    }
                   }
                 }
               )}
@@ -891,6 +1048,10 @@ const handleDelete = async (idCita) => {
                 <div className="route-info">
 
                   <p>
+                    <strong>ID:</strong> {cita.id}
+                  </p>
+
+                  <p>
                     Especialidad: {cita.especialidad}
                   </p>
 
@@ -915,7 +1076,21 @@ const handleDelete = async (idCita) => {
                   </p>
 
                   <p>
-                    Estado: {cita.estado}
+                    <strong>Estado:</strong>{' '}
+                    <span
+                      className="estado-badge"
+                      style={{
+                        backgroundColor: getEstadoColor(cita.estado),
+                        color: '#fff',
+                        padding: '0.2rem 0.8rem',
+                        borderRadius: '1rem',
+                        marginLeft: '0.5rem',
+                        fontSize: '0.9rem',
+                        fontWeight: '600'
+                      }}
+                    >
+                      {cita.estado}
+                    </span>
                   </p>
 
                 </div>
