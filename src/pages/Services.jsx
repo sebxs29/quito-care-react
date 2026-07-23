@@ -3,6 +3,8 @@ import Footer from "../components/footer/Footer"
 import Specialties from "../components/specialties/Specialties"
 import Process from "../components/process/Process"
 import Testimonials from "../components/testimonials/Testimonials"
+import DoctorsChart from "../components/doctorsChart/DoctorsChart"
+
 
 const Services = () => {
   return (
@@ -10,6 +12,7 @@ const Services = () => {
       <Header />
       <main>
         <Specialties />
+        <DoctorsChart/>
         <Process />
         <Testimonials />
       </main>

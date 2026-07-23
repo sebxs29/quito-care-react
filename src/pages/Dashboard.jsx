@@ -21,44 +21,13 @@ import {
 
 import TypeIt from 'typeit-react';
 
+import { Chart as ChartJS, ArcElement, Tooltip, Legend} from 'chart.js';
 
-const doctores = [
-  {
-    id: "doctor-1",
-    nombre: "Dr. Sebastián Toapanta",
-    especialidad: "Medicina general"
-  },
-  {
-    id: "doctor-2",
-    nombre: "Dr. Andrés Oto",
-    especialidad: "Medicina general"
-  },
-  {
-    id: "doctor-3",
-    nombre: "Dr. Sebastián Caiza",
-    especialidad: "Psicología"
-  },
-  {
-    id: "doctor-4",
-    nombre: "Dra. Emilia Caza",
-    especialidad: "Pediatría"
-  },
-  {
-    id: "doctor-5",
-    nombre: "Dr. Joel Freire",
-    especialidad: "Nutrición"
-  },
-  {
-    id: "doctor-6",
-    nombre: "Dra. Melanie Vera",
-    especialidad: "Dermatología"
-  },
-  {
-    id: "doctor-7",
-    nombre: "Dra. Annabel Gómez",
-    especialidad: "Gastroenterología"
-  }
-];
+import { Doughnut } from 'react-chartjs-2';
+
+import { doctores } from '../data/doctores';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 
 const especialidades = [
@@ -507,6 +476,77 @@ const handleDelete = async (idCita) => {
 
   }, []);
 
+// AGRUPAR LAS CITAS POR ESPECIALIDAD
+const citasPorEspecialidad = citas.reduce(
+  (acumulador, cita) => {
+
+    const especialidad = cita.especialidad?.trim() || "Sin especialidad";
+
+    acumulador[especialidad] = (acumulador[especialidad] || 0) + 1;
+    
+    return acumulador;
+
+  }, {}
+
+);
+
+// DATOS DEL GRAFICO
+const datosGraficosEspecialidades = {
+
+  labels: Object.keys(citasPorEspecialidad),
+
+  datasets: [
+    {
+      label: "Cantidad de citas",
+      data: Object.values(citasPorEspecialidad),
+      backgroundColor: [
+                "#2ECC71",
+        "#3498DB",
+        "#9B59B6",
+        "#F39C12",
+        "#E74C3C",
+        "#1ABC9C",
+        "#34495E"
+      ],
+      borderColor: modoOscuro ? "#1f2937" : "#ffffff",
+      borderWidth: 2
+    }
+  ]
+
+};
+
+// CONFIGURACION DEL GRAFICO
+const opcionesGraficosEspecialidades = {
+
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+
+    legend: {
+      position: "bottom",
+      labels: {
+        color: modoOscuro ? "#f5f5f5" : "#333333",
+        padding: 16
+      }
+    },
+
+    tooltip: {
+
+      callbacks: {
+
+        label: (context) => {
+
+          const cantidad = context.raw;
+
+          return `${context.label}: ${cantidad} ${cantidad == 1 ? "cita" : "citas"}`
+
+        }
+
+      }
+    }
+  }
+
+};
 
   return (
     <>
@@ -520,9 +560,6 @@ const handleDelete = async (idCita) => {
       limit={3}
       theme={modoOscuro ? "dark" : "light"}
     />
-
-    <section className="header_projects"></section>
-
 
       <section className="header_projects">
 
@@ -1011,6 +1048,30 @@ const handleDelete = async (idCita) => {
             }
 
           </form>
+
+        </section>
+
+
+        <section className="chart-section">
+            <h2>Mis citas por especialidad</h2>
+            <p>Distribución de las citas médicas registradas</p>
+
+            {
+              citas.length == 0 ? (
+                <div className="chart-empty">No existen citas para mostrar en el gráfico</div>
+              ) 
+              :
+              (
+                <div className='chart-container'>
+
+                  <Doughnut
+                    data={datosGraficosEspecialidades}
+                  options={opcionesGraficosEspecialidades}
+                  />
+
+                </div>
+              )
+            }
 
         </section>
 

@@ -732,3 +732,84 @@
 :root.dark-mode .cancel-btn:hover {
     background-color: #374151;
 }
+
+/* =========================================
+   GRÁFICO DE CITAS
+========================================= */
+
+.chart-section {
+    width: 100%;
+    padding: 2rem 1.5rem;
+    background-color: var(--colorBlanco);
+    border-radius: 1.4rem;
+    box-shadow:
+        0 4px 8px rgba(0, 0, 0, 0.05),
+        0 12px 28px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.chart-section h2 {
+    margin-bottom: 0.8rem;
+    color: var(--colorPrimario);
+    font-size: 2.2rem;
+}
+
+.chart-section > p {
+    margin-bottom: 2rem;
+    color: #777777;
+    font-size: 1.3rem;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 34rem;
+    height: 34rem;
+    margin: 0 auto;
+}
+
+.chart-empty {
+    padding: 2rem;
+    border-radius: 1rem;
+    background-color: var(--colorFondoSeccion);
+    color: #777777;
+    font-size: 1.3rem;
+}
+
+
+/* TABLET */
+
+@media (min-width: 768px) {
+
+    .chart-section {
+        padding: 3rem;
+    }
+
+    .chart-section h2 {
+        font-size: 2.5rem;
+    }
+
+    .chart-section > p {
+        font-size: 1.5rem;
+    }
+
+    .chart-container {
+        max-width: 38rem;
+        height: 38rem;
+    }
+}
+
+
+/* ESCRITORIO */
+
+@media (min-width: 1024px) {
+
+    .chart-section {
+        padding: 4rem;
+    }
+
+    .chart-container {
+        max-width: 42rem;
+        height: 42rem;
+    }
+}
