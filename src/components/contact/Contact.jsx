@@ -1,7 +1,73 @@
+import { useState } from "react"
+import emailjs from "@emailjs/browser"
+import { dbFirebase } from "../../firebase"
+import { addDoc, collection, serverTimestamp } from "firebase/firestore"
 
 import "./Contact.css"
 
 const Contact = () => {
+  const [form, setForm] = useState({
+    especialidad: "",
+    nombre: "",
+    correo: "",
+    celular: "",
+    motivo: "",
+  })
+
+  const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [enviando, setEnviando] = useState(false)
+  const [mensaje, setMensaje] = useState("")
+  const [error, setError] = useState("")
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError("")
+    setMensaje("")
+
+    if (!aceptaTerminos) {
+      setError("Debes aceptar los términos y condiciones")
+      return
+    }
+
+    setEnviando(true)
+
+    try {
+      // Guardar la solicitud en Firestore
+      await addDoc(collection(dbFirebase, "solicitudes"), {
+        ...form,
+        fechaCreacion: serverTimestamp(),
+      })
+
+      // Enviar correo de confirmación con EmailJS
+      await emailjs.send(
+        "service_sytrnhx",
+        "template_rto2rxu",
+        {
+          nombre: form.nombre,
+          correo: form.correo,
+          especialidad: form.especialidad,
+          motivo: form.motivo,
+          celular: form.celular,
+        },
+        "S268zx1GtNTal5Zc9"
+      )
+
+      setMensaje("¡Solicitud enviada! Revisa tu correo para la confirmación.")
+      setForm({ especialidad: "", nombre: "", correo: "", celular: "", motivo: "" })
+      setAceptaTerminos(false)
+
+    } catch (err) {
+      console.log(err)
+      setError("No se pudo enviar la solicitud. Intenta de nuevo.")
+    } finally {
+      setEnviando(false)
+    }
+  }
+
   return (
     <section id="contact" className="contact">
       <div className="contact__container container">
@@ -11,7 +77,7 @@ const Contact = () => {
             Registra tus datos
           </h2>
 
-          <form>
+          <form onSubmit={handleSubmit}>
 
             <p className="contact__description">
               Escribe la especialidad médica que necesitas
@@ -19,8 +85,11 @@ const Contact = () => {
 
             <input
               type="text"
+              name="especialidad"
               placeholder="Ej: Cardiología, Psicología..."
               className="contact__input"
+              value={form.especialidad}
+              onChange={handleChange}
               required
             />
 
@@ -30,28 +99,40 @@ const Contact = () => {
 
             <input
               type="text"
+              name="nombre"
               placeholder="Nombre completo"
               className="contact__input"
+              value={form.nombre}
+              onChange={handleChange}
               required
             />
 
             <input
               type="email"
+              name="correo"
               placeholder="Correo electrónico"
               className="contact__input"
+              value={form.correo}
+              onChange={handleChange}
               required
             />
 
             <input
               type="tel"
+              name="celular"
               placeholder="Número de celular"
               className="contact__input"
+              value={form.celular}
+              onChange={handleChange}
               required
             />
 
             <textarea
+              name="motivo"
               placeholder="Describe el motivo de tu cita..."
               className="contact__textarea"
+              value={form.motivo}
+              onChange={handleChange}
               required
             ></textarea>
 
@@ -59,7 +140,8 @@ const Contact = () => {
               <input
                 type="checkbox"
                 id="terms"
-                required
+                checked={aceptaTerminos}
+                onChange={(e) => setAceptaTerminos(e.target.checked)}
               />
 
               <label htmlFor="terms">
@@ -67,11 +149,15 @@ const Contact = () => {
               </label>
             </div>
 
+            {error && <p className="mensaje-formulario" style={{ color: "#d63031" }}>{error}</p>}
+            {mensaje && <p className="mensaje-formulario">{mensaje}</p>}
+
             <button
               type="submit"
               className="contact__button"
+              disabled={enviando}
             >
-              Enviar
+              {enviando ? "Enviando..." : "Enviar"}
             </button>
 
           </form>

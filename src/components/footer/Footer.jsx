@@ -1,4 +1,5 @@
 import "./Footer.css"
+import { Link } from "react-router"
 import { useEffect } from "react"
 import AOS from "aos"
 import "aos/dist/aos.css"
@@ -34,21 +35,20 @@ const Footer = () => {
         <div className="footer__links" data-aos="fade-up" data-aos-delay="100">
           <h4 className="footer__title">Enlaces</h4>
           <ul>
-            <li><a href="#">Inicio</a></li>
-            <li><a href="#">Servicios</a></li>
-            <li><a href="#">Como funciona</a></li>
-            <li><a href="#">Nosotros</a></li>
-            <li><a href="#">Contacto</a></li>
+            <li><Link to="/" onClick={() => window.scrollTo(0, 0)}>Inicio</Link></li>
+            <li><Link to="/servicios">Servicios</Link></li>
+            <li><Link to="/nosotros">Nosotros</Link></li>
+            <li><Link to="/contacto">Contacto</Link></li>
           </ul>
         </div>
 
         <div className="footer__services" data-aos="fade-up" data-aos-delay="200">
           <h4 className="footer__title">Servicios</h4>
           <ul>
-            <li><a href="#">Consulta en línea</a></li>
-            <li><a href="#">Especialidades</a></li>
-            <li><a href="#">Doctores</a></li>
-            <li><a href="#">Preguntas frecuentes</a></li>
+            <li><Link to="/servicios">Consulta en línea</Link></li>
+            <li><Link to="/servicios">Especialidades</Link></li>
+            <li><Link to="/nosotros">Doctores</Link></li>
+            <li><Link to="/#faq">Preguntas frecuentes</Link></li>
           </ul>
         </div>
 
