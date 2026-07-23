@@ -22,7 +22,7 @@ export const doctores = [
   {
     id: "doctor-5",
     nombre: "Dr. Joel Freire",
-    especialidad: "Nutrición"
+    especialidad: "Traumatología"
   },
   {
     id: "doctor-6",
@@ -32,6 +32,26 @@ export const doctores = [
   {
     id: "doctor-7",
     nombre: "Dra. Annabel Gómez",
-    especialidad: "Gastroenterología"
+    especialidad: "Cardiología"
+  },
+  {
+    id: "doctor-8",
+    nombre: "Dr. Juan Pérez",
+    especialidad: "Medicina general"
+  },
+  {
+    id: "doctor-9",
+    nombre: "Dra. María López",
+    especialidad: "Pediatría"
+  },
+  {
+    id: "doctor-10",
+    nombre: "Dr. Andrés Salazar",
+    especialidad: "Cardiología"
+  },
+  {
+    id: "doctor-11",
+    nombre: "Dra. Carolina Vega",
+    especialidad: "Psicología"
   }
 ];
