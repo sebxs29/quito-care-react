@@ -1,8 +1,8 @@
 import "./Schedule.css";
 
 const schedule = [
-  { day: "Lunes a Viernes", hours: "08:00 - 19:00", mode: "Videoconsulta y chat", type: "normal" },
-  { day: "Sábados", hours: "09:00 - 14:00", mode: "Videoconsulta", type: "normal" },
+  { day: "Lunes a Viernes", hours: "08:00 - 19:00", mode: "Videollamada, chat y presencial", type: "normal" },
+  { day: "Sábados", hours: "09:00 - 14:00", mode: "Videollamada, chat y presencial", type: "normal" },
   { day: "Domingos", hours: "Cerrado", mode: "Emergencias por WhatsApp", type: "emergency" },
   { day: "Feriados nacionales", hours: "Cerrado", mode: "Emergencias por WhatsApp", type: "emergency" },
 ];

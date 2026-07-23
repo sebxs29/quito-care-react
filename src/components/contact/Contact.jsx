@@ -18,15 +18,33 @@ const Contact = () => {
   const [enviando, setEnviando] = useState(false)
   const [mensaje, setMensaje] = useState("")
   const [error, setError] = useState("")
+  const [errores, setErrores] = useState({})
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const validar = () => {
+    const nuevosErrores = {}
+
+    if (!form.especialidad.trim()) nuevosErrores.especialidad = "La especialidad es requerida"
+    if (!form.nombre.trim()) nuevosErrores.nombre = "El nombre es requerido"
+    if (!form.correo.trim()) nuevosErrores.correo = "El correo es requerido"
+    else if (!/\S+@\S+\.\S+/.test(form.correo)) nuevosErrores.correo = "Ingresa un correo válido"
+    if (!form.celular.trim()) nuevosErrores.celular = "El número de celular es requerido"
+    if (!form.motivo.trim()) nuevosErrores.motivo = "El motivo es requerido"
+    else if (form.motivo.trim().length < 10) nuevosErrores.motivo = "El motivo debe tener mínimo 10 caracteres"
+
+    setErrores(nuevosErrores)
+    return Object.keys(nuevosErrores).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
     setMensaje("")
+
+    if (!validar()) return
 
     if (!aceptaTerminos) {
       setError("Debes aceptar los términos y condiciones")
@@ -36,13 +54,11 @@ const Contact = () => {
     setEnviando(true)
 
     try {
-      // Guardar la solicitud en Firestore
       await addDoc(collection(dbFirebase, "solicitudes"), {
         ...form,
         fechaCreacion: serverTimestamp(),
       })
 
-      // Enviar correo de confirmación con EmailJS
       await emailjs.send(
         "service_sytrnhx",
         "template_rto2rxu",
@@ -59,6 +75,7 @@ const Contact = () => {
       setMensaje("¡Solicitud enviada! Revisa tu correo para la confirmación.")
       setForm({ especialidad: "", nombre: "", correo: "", celular: "", motivo: "" })
       setAceptaTerminos(false)
+      setErrores({})
 
     } catch (err) {
       console.log(err)
@@ -77,7 +94,7 @@ const Contact = () => {
             Registra tus datos
           </h2>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
 
             <p className="contact__description">
               Escribe la especialidad médica que necesitas
@@ -90,8 +107,8 @@ const Contact = () => {
               className="contact__input"
               value={form.especialidad}
               onChange={handleChange}
-              required
             />
+            {errores.especialidad && <span className="errors">{errores.especialidad}</span>}
 
             <p className="contact__description">
               Llena los siguientes items
@@ -104,8 +121,8 @@ const Contact = () => {
               className="contact__input"
               value={form.nombre}
               onChange={handleChange}
-              required
             />
+            {errores.nombre && <span className="errors">{errores.nombre}</span>}
 
             <input
               type="email"
@@ -114,8 +131,8 @@ const Contact = () => {
               className="contact__input"
               value={form.correo}
               onChange={handleChange}
-              required
             />
+            {errores.correo && <span className="errors">{errores.correo}</span>}
 
             <input
               type="tel"
@@ -124,8 +141,8 @@ const Contact = () => {
               className="contact__input"
               value={form.celular}
               onChange={handleChange}
-              required
             />
+            {errores.celular && <span className="errors">{errores.celular}</span>}
 
             <textarea
               name="motivo"
@@ -133,8 +150,8 @@ const Contact = () => {
               className="contact__textarea"
               value={form.motivo}
               onChange={handleChange}
-              required
             ></textarea>
+            {errores.motivo && <span className="errors">{errores.motivo}</span>}
 
             <div className="contact__check">
               <input

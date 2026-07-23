@@ -55,12 +55,6 @@ const Specialties = () => {
                     ))}
                 </Swiper>
 
-                <div className="specialties__boton-contenedor">
-                    <a href="#" className="specialties__boton">
-                        Ver todas las especialidades
-                    </a>
-                </div>
-
             </div>
         </section>
     )
