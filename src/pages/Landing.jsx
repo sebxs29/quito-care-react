@@ -1,5 +1,3 @@
-import { useEffect } from "react"
-import { useLocation } from "react-router"
 import Benefits from "../components/benefits/Benefits"
 import Contact from "../components/contact/Contact"
 import Cta from "../components/cta/Cta"
@@ -11,17 +9,6 @@ import Hero from "../components/hero/Hero"
 import Partners from "../components/partners/Partners"
 
 const Landing = () => {
-  const { hash } = useLocation()
-
-  useEffect(() => {
-    if (hash) {
-      const elemento = document.querySelector(hash)
-      if (elemento) {
-        elemento.scrollIntoView({ behavior: "smooth" })
-      }
-    }
-  }, [hash])
-
   return (
     <>
       <Header/>

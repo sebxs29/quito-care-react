@@ -1,4 +1,4 @@
-import { Routes, Route, BrowserRouter, Navigate } from "react-router"
+import { Routes, Route, BrowserRouter, Navigate, useLocation } from "react-router"
 import Landing from "./pages/Landing"
 import Services from "./pages/Services"
 import Login from "./pages/Login"
@@ -9,6 +9,23 @@ import Contacto from "./pages/Contacto"
 
 import { useEffect, useState } from "react"
 import { authFirebase } from "./firebase"
+
+const ScrollManager = () => {
+  const { pathname, hash } = useLocation()
+
+  useEffect(() => {
+    if (hash) {
+      const elemento = document.querySelector(hash)
+      if (elemento) {
+        elemento.scrollIntoView({ behavior: "smooth" })
+        return
+      }
+    }
+    window.scrollTo(0, 0)
+  }, [pathname, hash])
+
+  return null
+}
 
 function App() {
 
@@ -24,6 +41,7 @@ function App() {
 
   <>
     <BrowserRouter>
+      <ScrollManager />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/servicios" element={<Services />} />
