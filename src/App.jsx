@@ -6,6 +6,7 @@ import Register from "./pages/Register"
 import Dashboard from "./pages/Dashboard"
 import Nosotros from "./pages/Nosotros"
 import Contacto from "./pages/Contacto"
+import NotFound from "./pages/NotFound"
 
 import { useEffect, useState } from "react"
 import { authFirebase } from "./firebase"
@@ -62,6 +63,8 @@ function App() {
           path="/registro"
           element={user ? <Navigate to="/dashboard" /> : <Register />}
         />
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   </>
